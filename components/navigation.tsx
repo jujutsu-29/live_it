@@ -69,7 +69,7 @@ export function Navigation() {
           <span className="text-sm text-muted-foreground">Loading...</span>
         ) : user ? (
           // <DropdownMenu>
-          <DropdownMenu modal={false}>
+          <DropdownMenu >
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" type="button" className="relative h-8 w-8 rounded-full hover-lift">
                 <Avatar className="h-8 w-8">
@@ -78,7 +78,8 @@ export function Navigation() {
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 glass" align="end" forceMount>
+            <DropdownMenuContent className="w-56 glass " align="end" forceMount>
+            {/* <DropdownMenuContent forceMount className="bg-white z-50 p-4"> */}
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{user.name}</p>

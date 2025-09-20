@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { Navigation } from "@/components/navigation"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,32 +14,51 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Camera, MapPin, Calendar, Youtube, Twitter, Instagram, Edit3, Save, X } from "lucide-react"
 
 export default function ProfilePage() {
+  const { data: session } = useSession()
   const [isEditing, setIsEditing] = useState(false)
   const [profile, setProfile] = useState({
-    name: "John Doe",
-    username: "johndoe",
-    email: "john@example.com",
-    bio: "Content creator and live streamer passionate about technology and education. Building the future of online learning through interactive streaming.",
-    location: "San Francisco, CA",
-    website: "https://johndoe.com",
-    joinDate: "January 2023",
-    avatar: "/professional-avatar.png",
+    name: "",
+    email: "",
+    bio: "",
+    location: "",
+    website: "",
+    joinDate: "",
+    avatar: "/placeholder.svg",
     stats: {
-      totalStreams: 156,
-      totalViewers: 45200,
-      followers: 12800,
-      hoursStreamed: 340,
+      totalStreams: 0,
+      totalViewers: 0,
+      followers: 0,
+      hoursStreamed: 0,
     },
     socialLinks: {
-      youtube: "https://youtube.com/@johndoe",
-      twitter: "https://twitter.com/johndoe",
-      instagram: "https://instagram.com/johndoe",
+      youtube: "",
+      twitter: "",
+      instagram: "",
     },
   })
 
+  // Prefill profile from NextAuth session
+  useEffect(() => {
+    if(!session){
+      return;
+    }
+      //  if(!session.user) return;
+
+    if (session?.user) {
+      setProfile((prev) => ({
+        ...prev,
+        name: session.user?.name || "",
+        email: session.user?.email || "",
+        avatar: session.user?.image || "/placeholder.svg",
+      }))
+    }
+  }, [session])
+
   const handleSave = () => {
     setIsEditing(false)
-    // Here you would typically save to your backend
+    // Send updated profile data (bio, social links, location, website) to backend
+    // Example:
+    // await fetch('/api/profile', { method: 'POST', body: JSON.stringify(profile) })
   }
 
   return (
@@ -60,13 +80,14 @@ export default function ProfilePage() {
                   <div className="flex flex-col items-center text-center space-y-4">
                     <div className="relative">
                       <Avatar className="h-24 w-24">
-                        <AvatarImage src={profile.avatar || "/placeholder.svg"} alt={profile.name} />
+                        <AvatarImage src={profile.avatar} alt={profile.name} />
                         <AvatarFallback className="text-2xl">{profile.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <Button
                         size="sm"
                         variant="outline"
                         className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0 bg-transparent"
+                        disabled
                       >
                         <Camera className="h-4 w-4" />
                       </Button>
@@ -74,7 +95,7 @@ export default function ProfilePage() {
 
                     <div className="space-y-2">
                       <h2 className="text-2xl font-bold">{profile.name}</h2>
-                      <p className="text-muted-foreground">@{profile.username}</p>
+                      {/* <p className="text-muted-foreground">@{profile.username}</p> */}
                       <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                         Pro Streamer
                       </Badge>
@@ -87,7 +108,7 @@ export default function ProfilePage() {
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
-                        Joined {profile.joinDate}
+                        Joined {profile.joinDate || "—"}
                       </div>
                     </div>
 
@@ -119,35 +140,6 @@ export default function ProfilePage() {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Stats */}
-              <Card className="hover-lift animate-scale-in">
-                <CardHeader>
-                  <CardTitle className="text-lg">Streaming Stats</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary">{profile.stats.totalStreams}</div>
-                      <div className="text-sm text-muted-foreground">Total Streams</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary">
-                        {profile.stats.totalViewers.toLocaleString()}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Total Viewers</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary">{profile.stats.followers.toLocaleString()}</div>
-                      <div className="text-sm text-muted-foreground">Followers</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary">{profile.stats.hoursStreamed}</div>
-                      <div className="text-sm text-muted-foreground">Hours Streamed</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
 
             {/* Profile Details */}
@@ -163,14 +155,9 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Full Name</Label>
-                      <Input
-                        id="name"
-                        value={profile.name}
-                        onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                        disabled={!isEditing}
-                      />
+                      <Input id="name" value={profile.name} disabled />
                     </div>
-                    <div className="space-y-2">
+                    {/* <div className="space-y-2">
                       <Label htmlFor="username">Username</Label>
                       <Input
                         id="username"
@@ -178,18 +165,12 @@ export default function ProfilePage() {
                         onChange={(e) => setProfile({ ...profile, username: e.target.value })}
                         disabled={!isEditing}
                       />
-                    </div>
+                    </div> */}
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={profile.email}
-                      onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                      disabled={!isEditing}
-                    />
+                    <Input id="email" type="email" value={profile.email} disabled />
                   </div>
 
                   <div className="space-y-2">

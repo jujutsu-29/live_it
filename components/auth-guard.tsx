@@ -12,7 +12,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
 
-  console.log("AuthGuard session:", session)
+  // console.log("AuthGuard session:", session)
 
   // While checking session
   if (status === "loading") {

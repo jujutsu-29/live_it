@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Settings, User, Bell, Shield, CreditCard, Youtube, Palette, Monitor, Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
+import { useSession } from "next-auth/react"
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
@@ -23,12 +24,18 @@ export default function SettingsPage() {
     marketing: true,
   })
 
+  const { data: session, status } = useSession()
+  const user = session?.user
+
   const [profile, setProfile] = useState({
-    name: "John Doe",
-    email: "john@example.com",
+    name: user?.name ?? "",
+    email: user?.email ?? "",
     bio: "Content creator and live streamer",
-    website: "https://johndoe.com",
+    // website: "https://johndoe.com",
   })
+
+  console.log("User in Settings page:", profile)
+  console.log("User in Settings page:", user)
 
   return (
     <AuthGuard>
@@ -162,24 +169,27 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Full Name</Label>
-                      <Input
+                      <p>{user?.name ?? "No email found"}</p>
+                      {/* <Input
                         id="name"
-                        value={profile.name}
+                        value={user?.name ?? ""}
                         onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                      />
+                      /> */}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
-                      <Input
+                      <p>{user?.email ?? "No email found"}</p>
+
+                      {/* <Input
                         id="email"
                         type="email"
-                        value={profile.email}
+                        value={user?.email ? ""}
                         onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                      />
+                      /> */}
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <Label htmlFor="bio">Bio</Label>
                     <Input
                       id="bio"
@@ -187,9 +197,9 @@ export default function SettingsPage() {
                       onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
                       placeholder="Tell us about yourself..."
                     />
-                  </div>
+                  </div> */}
 
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <Label htmlFor="website">Website</Label>
                     <Input
                       id="website"
@@ -198,9 +208,9 @@ export default function SettingsPage() {
                       onChange={(e) => setProfile({ ...profile, website: e.target.value })}
                       placeholder="https://yourwebsite.com"
                     />
-                  </div>
+                  </div> */}
 
-                  <Button className="hover-lift">Save Changes</Button>
+                  {/* <Button className="hover-lift">Save Changes</Button> */}
                 </CardContent>
               </Card>
             </TabsContent>

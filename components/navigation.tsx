@@ -29,7 +29,7 @@ export function Navigation() {
   const { data: session, status } = useSession()
   const user = session?.user
 
-  console.log("User data in Nav:", user);
+  // console.log("User data in Nav:", user);
 
   return (
     <nav className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/50 glass animate-fade-in">
@@ -68,9 +68,10 @@ export function Navigation() {
         {status === "loading" ? (
           <span className="text-sm text-muted-foreground">Loading...</span>
         ) : user ? (
-          <DropdownMenu>
+          // <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full hover-lift">
+              <Button variant="ghost" type="button" className="relative h-8 w-8 rounded-full hover-lift">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user.image || "/placeholder.svg"} alt={user.name || "User"} />
                   <AvatarFallback>{user.name?.charAt(0).toUpperCase()}</AvatarFallback>

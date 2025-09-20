@@ -73,11 +73,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       authorization: {
         params: {
           scope:
-            "openid email profile https://www.googleapis.com/auth/youtube",
+            "openid email profile https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly",
           access_type: "offline",
           prompt: "consent",
         },
       },
+
     }),
   ],
   session: {
@@ -104,13 +105,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return refreshAccessToken(t);
     },
     async session({ session, token }) {
-      // keep default session.user
       return {
         ...session,
+        user: (token as any).user ?? session.user,
         accessToken: (token as any).accessToken,
         error: (token as any).error,
       };
     }
+
 
   },
   pages: {

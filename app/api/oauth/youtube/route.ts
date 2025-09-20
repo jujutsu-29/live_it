@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Mock OAuth initiation
-  const mockAuthUrl = `https://accounts.google.com/oauth/authorize?client_id=${process.env.YOUTUBE_CLIENT_ID}&redirect_uri=${encodeURIComponent(request.nextUrl.origin + "/api/oauth/youtube")}&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube&access_type=offline`
+  const mockAuthUrl = `https://accounts.google.com/oauth/authorize?client_id=${process.env.YOUTUBE_CLIENT_ID}&redirect_uri=${encodeURIComponent(request.nextUrl.origin + "/api/oauth/youtube")}&response_type=code&scope=https://www.googleapis.com/youtube.readonly https://www.googleapis.com/youtube&access_type=offline`
 
   return NextResponse.json({
     connected: false,

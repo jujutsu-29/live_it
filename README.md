@@ -38,7 +38,7 @@ STRIPE_PUBLIC_KEY=pk_test_your-stripe-public-key
 STRIPE_SECRET_KEY=sk_test_your-stripe-secret-key
 
 # Optional: Development redirect URL for Supabase auth
-NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=http://localhost:3000/auth/callback
+NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=http://localhost:3000/callback
 \`\`\`
 
 ## Getting Started

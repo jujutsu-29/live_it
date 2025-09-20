@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useAuth } from "@/components/auth-context"
+import { signOut, useSession } from "next-auth/react"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 const navigation = [
@@ -26,7 +26,10 @@ const navigation = [
 
 export function Navigation() {
   const pathname = usePathname()
-  const { user, signOut } = useAuth()
+  const { data: session, status } = useSession()
+  const user = session?.user
+
+  console.log("User data in Nav:", user);
 
   return (
     <nav className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/50 glass animate-fade-in">
@@ -62,13 +65,15 @@ export function Navigation() {
       <div className="flex items-center space-x-4">
         <ThemeToggle />
 
-        {user ? (
+        {status === "loading" ? (
+          <span className="text-sm text-muted-foreground">Loading...</span>
+        ) : user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full hover-lift">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                  <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={user.image || "/placeholder.svg"} alt={user.name || "User"} />
+                  <AvatarFallback>{user.name?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
@@ -93,17 +98,19 @@ export function Navigation() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={signOut}>
+              <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Sign out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <Button variant="outline" size="sm" className="hover-lift bg-transparent">
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign In
-          </Button>
+          <Link href="/login">
+            <Button variant="outline" size="sm" className="hover-lift bg-transparent">
+              <User className="h-4 w-4 mr-2" />
+              Sign In
+            </Button>
+          </Link>
         )}
       </div>
     </nav>

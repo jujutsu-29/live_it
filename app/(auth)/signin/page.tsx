@@ -12,58 +12,23 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Video, Mail, Eye, EyeOff } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+// import SignIn from "@/components/sign-in"
+import { signInWithGoogle } from "@/lib/actions/signin"
+import { signIn } from "next-auth/react"
 
 export default function SignInPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
 
-  const handleEmailSignIn = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    try {
-      // Mock authentication - replace with real auth
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      if (email && password) {
-        localStorage.setItem("auth_token", "mock_token_" + Date.now())
-        localStorage.setItem("user_email", email)
-        toast({
-          title: "Welcome back!",
-          description: "You have been signed in successfully.",
-        })
-        router.push("/dashboard")
-      } else {
-        throw new Error("Please fill in all fields")
-      }
-    } catch (error) {
-      toast({
-        title: "Sign in failed",
-        description: error instanceof Error ? error.message : "Please check your credentials and try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
     try {
-      // Mock OAuth flow - replace with real OAuth
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      localStorage.setItem("auth_token", "mock_oauth_token_" + Date.now())
-      localStorage.setItem("user_email", "user@gmail.com")
-      toast({
-        title: "Welcome!",
-        description: "You have been signed in with Google.",
-      })
+      const result = await signIn("google",  { redirectTo: "/dashboard" });
+      console.log(result);
       router.push("/dashboard")
     } catch (error) {
+      console.log("error in auth", error);
       toast({
         title: "OAuth failed",
         description: "Unable to sign in with Google. Please try again.",
@@ -108,17 +73,17 @@ export default function SignInPage() {
             Continue with Google
           </Button>
 
-          <div className="relative">
+          {/* <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <Separator className="w-full" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
             </div>
-          </div>
+          </div> */}
 
           {/* Email Sign In */}
-          <form onSubmit={handleEmailSignIn} className="space-y-4">
+          {/* <form onSubmit={handleEmailSignIn} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -167,17 +132,17 @@ export default function SignInPage() {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
-          </form>
+          </form> */}
 
-          <div className="text-center text-sm">
-            <Link href="/auth/forgot-password" className="text-primary hover:underline">
+          {/* <div className="text-center text-sm">
+            <Link href="/forgot-password" className="text-primary hover:underline">
               Forgot your password?
             </Link>
-          </div>
+          </div> */}
 
           <div className="text-center text-sm text-muted-foreground">
             Don't have an account?{" "}
-            <Link href="/auth/signup" className="text-primary hover:underline">
+            <Link href="/signup" className="text-primary hover:underline">
               Sign up
             </Link>
           </div>

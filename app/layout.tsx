@@ -4,15 +4,14 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
-import { AuthProvider } from "@/components/auth-context"
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
+import { SessionProvider } from "next-auth/react"
 
 export const metadata: Metadata = {
   title: "StreamLive - Live-to-YouTube Booking Service",
   description: "Professional live streaming booking service for content creators",
-  generator: "v0.app",
 }
 
 export default function RootLayout({
@@ -24,10 +23,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange={false}>
-          <AuthProvider>
+          <SessionProvider>
             <Suspense fallback={null}>{children}</Suspense>
             <Toaster />
-          </AuthProvider>
+          </SessionProvider>
         </ThemeProvider>
         <Analytics />
       </body>

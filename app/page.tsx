@@ -14,10 +14,10 @@ export default function LandingPage() {
             <span className="text-xl font-bold text-foreground">StreamLive</span>
           </div>
           <div className="flex items-center space-x-4">
-            <Link href="/auth/signin">
+            <Link href="/signin">
               <Button variant="outline">Sign In</Button>
             </Link>
-            <Link href="/auth/signup">
+            <Link href="/signup">
               <Button>Get Started</Button>
             </Link>
           </div>
@@ -36,7 +36,7 @@ export default function LandingPage() {
             professional studio platform.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/signup">
+            <Link href="/signup">
               <Button size="lg" className="text-lg px-8 py-3">
                 Start Streaming Today
               </Button>
@@ -113,7 +113,7 @@ export default function LandingPage() {
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             Join thousands of content creators who trust StreamLive for their professional streaming needs.
           </p>
-          <Link href="/auth/signup">
+          <Link href="/signup">
             <Button size="lg" className="text-lg px-8 py-3">
               Get Started Free
             </Button>

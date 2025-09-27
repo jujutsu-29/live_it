@@ -71,7 +71,7 @@ enum JobStatus {
 
 model VideoJob {
   id        Int      @id @default(autoincrement())
-  userId    Int
+  userId    String
   videoUrl  String
   status    JobStatus  @default(pending) // pending, processing, done, failed
   s3Key     String?

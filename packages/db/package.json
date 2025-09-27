@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "src/client.ts",
   "types": "src/client.ts",
+  "type": "module",
   "scripts": {
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev"

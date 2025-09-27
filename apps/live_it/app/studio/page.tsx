@@ -328,30 +328,82 @@ export default function StudioPage() {
     }
   }
 
+  // const connectYouTube = async () => {
+  //   try {
+  //     // Mock OAuth flow
+  //     window.open("/api/oauth/youtube", "_blank", "width=500,height=600")
+  //     // Simulate successful connection after a delay
+  //     setTimeout(() => {
+  //       setStreamStatus((prev) => ({
+  //         ...prev,
+  //         youtubeConnected: true,
+  //         streamKey: "mock-stream-key-" + Date.now(),
+  //       }))
+  //       toast({
+  //         title: "YouTube connected!",
+  //         description: "Your YouTube account has been connected successfully.",
+  //       })
+  //     }, 3000)
+  //   } catch (error) {
+  //     toast({
+  //       title: "Connection failed",
+  //       description: "Failed to connect to YouTube. Please try again.",
+  //       variant: "destructive",
+  //     })
+  //   }
+  // }
+
+
   const connectYouTube = async () => {
-    try {
-      // Mock OAuth flow
-      window.open("/api/oauth/youtube", "_blank", "width=500,height=600")
-      // Simulate successful connection after a delay
-      setTimeout(() => {
-        setStreamStatus((prev) => ({
-          ...prev,
-          youtubeConnected: true,
-          streamKey: "mock-stream-key-" + Date.now(),
-        }))
-        toast({
-          title: "YouTube connected!",
-          description: "Your YouTube account has been connected successfully.",
-        })
-      }, 3000)
-    } catch (error) {
-      toast({
-        title: "Connection failed",
-        description: "Failed to connect to YouTube. Please try again.",
-        variant: "destructive",
-      })
+  try {
+    // Open your NextAuth OAuth flow for YouTube
+    const popup = window.open(
+      "/api/auth/signin/google?callbackUrl=/dashboard", // NextAuth signin endpoint for Google
+      "_blank",
+      "width=500,height=600"
+    )
+
+    if (!popup) {
+      throw new Error("Popup blocked")
     }
+
+    // Poll the popup until it closes
+    const timer = setInterval(async () => {
+      if (popup.closed) {
+        clearInterval(timer)
+
+        // Call your backend to check if YouTube is connected
+        const res = await fetch("/api/youtube/status")
+        const data = await res.json()
+
+        if (data.connected && data.streamKey) {
+          setStreamStatus((prev) => ({
+            ...prev,
+            youtubeConnected: true,
+            streamKey: data.streamKey,
+          }))
+
+          toast({
+            title: "YouTube connected!",
+            description: "Your YouTube account has been connected successfully.",
+          })
+        } else {
+          toast({
+            title: "Connection failed",
+            description: "Could not verify YouTube connection.",
+            variant: "destructive",
+          })
+        }
+      }
+    }, 500)
+  } catch (error) {
+    toast({
+      title: "Connection failed",
+      description: "Failed to connect to YouTube. Please try again.",
+      variant: "destructive",
+    })
   }
+}
 
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)

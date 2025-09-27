@@ -1,17 +1,49 @@
-import ytdl from "ytdl-core";
+// import ytdl from "ytdl-core";
+// import ytdl from '@distube/ytdl-core';
+import { YtDlp } from 'ytdlp-nodejs';
+
+const ytdlp = new YtDlp();
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { db } from "@liveit/db";
+
+// const s3 = new S3Client({ region: process.env.AWS_REGION! });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const s3 = new S3Client({ region: process.env.AWS_REGION! });
 
 async function processJob(job: any) {
-  const videoUrl = job.video_url;
-  const videoId = ytdl.getURLVideoID(videoUrl);
+  console.log("job thing is ", job);
+  const videoUrl = job.videoUrl;
+
+  if (!videoUrl) {
+    console.error(`❌ Job ${job.id} has no video URL.`);
+    await db.videoJob.update({
+      where: { id: job.id },
+      data: { status: "failed" },
+    });
+    return;
+  }
+  let cleanUrl = videoUrl.split("&")[0];
+  // const videoId = ytdl.getURLVideoID(videoUrl);
+
+  let videoId;
+try {
+  // videoId = ytdl.getURLVideoID(cleanUrl);
+  videoId = 1;
+} catch {
+  console.error(`Invalid video URL: ${cleanUrl}`);
+  await db.videoJob.update({ where: { id: job.id }, data: { status: "failed" } });
+  return;
+}
   const filePath = path.resolve(__dirname, `${videoId}.mp4`);
 
   try {
+    console.log(`Starting job ${job.id} for db from pending to processing`);
     // Update status
     await db.videoJob.update({
       where: { id: job.id },
@@ -19,24 +51,45 @@ async function processJob(job: any) {
     });
 
     // Download video
-    await new Promise<void>((resolve, reject) => {
-      ytdl(videoUrl, { quality: "highest" })
-        .pipe(fs.createWriteStream(filePath))
-        .on("finish", () => resolve())
-        .on("error", reject);
-    });
+    console.log(`Processing job ${job.id} - downloading video...`);
+    // await new Promise<void>((resolve, reject) => {
+    //   ytdlp(videoUrl, { quality: "highest" })
+    //     .pipe(fs.createWriteStream(filePath))
+    //     .on("finish", () => resolve())
+    //     .on("error", reject);
+    // });
 
+    const ytdlpArgs = [
+      '-o', filePath,
+      '--recode-video', 'mp4'
+    ];
+
+    try {
+    const output = await ytdlp.downloadAsync(
+      cleanUrl,
+      {
+        onProgress: (progress) => {
+          console.log(progress);
+        },
+      },
+      ytdlpArgs,
+    );
+    console.log('Download completed:', output);
+  } catch (error) {
+    console.error('Error:', error);
+  }
     // Upload to S3
+    console.log("Uploading to S3...");
     const key = `uploads/${videoId}-${Date.now()}.mp4`;
     const fileStream = fs.createReadStream(filePath);
     await s3.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key, Body: fileStream, ContentType: "video/mp4" }));
-
+    console.log("Upload complete.");
     // Update job as done
     await db.videoJob.update({
       where: { id: job.id },
       data: { status: "done", s3Key: key },
     });
-
+    console.log("Cleaning up local file...");
     fs.unlinkSync(filePath);
     console.log(`✅ Job ${job.id} completed.`);
   } catch (err) {
@@ -49,6 +102,7 @@ async function processJob(job: any) {
 setInterval(async () => {
   const jobs = await db.videoJob.findMany({ where: { status: "pending" } });
   for (const job of jobs) {
+    console.log(`🔄 Processing job ${job.id}... before function call`);
     processJob(job); // process independently
   }
 }, 5000); // every 5s

@@ -13,7 +13,7 @@ async function processJob(job: any) {
 
   try {
     // Update status
-    await db.video_jobs.update({
+    await db.videoJob.update({
       where: { id: job.id },
       data: { status: "processing" },
     });
@@ -32,22 +32,22 @@ async function processJob(job: any) {
     await s3.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key, Body: fileStream, ContentType: "video/mp4" }));
 
     // Update job as done
-    await db.video_jobs.update({
+    await db.videoJob.update({
       where: { id: job.id },
-      data: { status: "done", s3_key: key },
+      data: { status: "done", s3Key: key },
     });
 
     fs.unlinkSync(filePath);
     console.log(`✅ Job ${job.id} completed.`);
   } catch (err) {
-    await db.video_jobs.update({ where: { id: job.id }, data: { status: "failed" } });
+    await db.videoJob.update({ where: { id: job.id }, data: { status: "failed" } });
     console.error(`❌ Job ${job.id} failed:`, err);
   }
 }
 
 // Poll DB for new jobs
 setInterval(async () => {
-  const jobs = await db.video_jobs.findMany({ where: { status: "pending" } });
+  const jobs = await db.videoJob.findMany({ where: { status: "pending" } });
   for (const job of jobs) {
     processJob(job); // process independently
   }

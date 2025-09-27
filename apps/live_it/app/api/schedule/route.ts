@@ -9,10 +9,10 @@ export async function POST(req: Request) {
   }
 
   // 1️⃣ Insert job into DB
-  const result = await db.video_jobs.create({
+  const result = await db.videoJob.create({
     data: {
-      user_id: userId,
-      video_url: videoUrl,
+      userId: userId,
+      videoUrl: videoUrl,
       status: "pending",
     },
   });

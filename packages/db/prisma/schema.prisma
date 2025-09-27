@@ -21,7 +21,7 @@ model User {
   name          String?
   email         String?   @unique
   image         String?
-
+  emailVerified DateTime? @default(now())
   accounts      Account[]
   sessions      Session[]
 }

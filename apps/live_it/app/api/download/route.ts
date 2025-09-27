@@ -13,12 +13,12 @@ const unlink = promisify(fs.unlink);
 const s3 = new S3Client({ region: process.env.AWS_REGION });
 
 export async function POST(req: Request) {
-  const { videoId } = await req.json();
-  if (!videoId) {
-    return NextResponse.json({ error: "videoId required" }, { status: 400 });
+  const { videoUrl } = await req.json();
+  if (!videoUrl) {
+    return NextResponse.json({ error: "video URL required" }, { status: 400 });
   }
 
-  const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  // const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
   const tmpPath = path.join(os.tmpdir(), `${randomUUID()}.mp4`);
 
   // 1) Download via yt-dlp
@@ -32,7 +32,8 @@ export async function POST(req: Request) {
   });
 
   // 2) Upload to S3
-  const key = `uploads/${videoId}-${Date.now()}.mp4`;
+  // const key = `uploads/${videoId}-${Date.now()}.mp4`;
+  const key = `uploads/${randomUUID()}-${Date.now()}.mp4`;
   const fileStream = fs.createReadStream(tmpPath);
 
   const upload = new Upload({

@@ -2,18 +2,30 @@
 // import ytdl from '@distube/ytdl-core';
 import { YtDlp } from 'ytdlp-nodejs';
 
-const ytdlp = new YtDlp();
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { db } from "@liveit/db";
+import dotenv from "dotenv";
+
 
 // const s3 = new S3Client({ region: process.env.AWS_REGION! });
+
+const ytdlp = new YtDlp();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+
+console.log("Env vars:", {
+  AWS_REGION: process.env.AWS_REGION,
+  AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
+  // DATABASE_URL: process.env.DATABASE_URL ? "set" : "not set",
+});   
+
+// )
 const s3 = new S3Client({ region: process.env.AWS_REGION! });
 
 async function processJob(job: any) {
@@ -32,14 +44,14 @@ async function processJob(job: any) {
   // const videoId = ytdl.getURLVideoID(videoUrl);
 
   let videoId;
-try {
-  // videoId = ytdl.getURLVideoID(cleanUrl);
-  videoId = 1;
-} catch {
-  console.error(`Invalid video URL: ${cleanUrl}`);
-  await db.videoJob.update({ where: { id: job.id }, data: { status: "failed" } });
-  return;
-}
+  try {
+    // videoId = ytdl.getURLVideoID(cleanUrl);
+    videoId = 2;
+  } catch {
+    console.error(`Invalid video URL: ${cleanUrl}`);
+    await db.videoJob.update({ where: { id: job.id }, data: { status: "failed" } });
+    return;
+  }
   const filePath = path.resolve(__dirname, `${videoId}.mp4`);
 
   try {
@@ -65,24 +77,38 @@ try {
     ];
 
     try {
-    const output = await ytdlp.downloadAsync(
-      cleanUrl,
-      {
-        onProgress: (progress) => {
-          console.log(progress);
-        },
-      },
-      ytdlpArgs,
-    );
-    console.log('Download completed:', output);
-  } catch (error) {
-    console.error('Error:', error);
-  }
+      // const output = await ytdlp.downloadAsync(
+      //   cleanUrl,
+      //   {
+      //     onProgress: (progress) => {
+      //       console.log(progress);
+      //     },
+      //   },
+      // );
+
+      // const output = await ytdlp.downloadAsync(
+      //   cleanUrl,
+      //   {
+      //     onProgress: (progress) => console.log(progress),
+      //     args: ytdlpArgs
+      //   }
+      // );
+
+      const output = await ytdlp.downloadAsync(cleanUrl, {
+        output: filePath,
+        recodeVideo: 'mp4',
+        onProgress: (progress) => console.log(progress),
+    });
+
+      console.log('Download completed:', output);
+    } catch (error) {
+      console.error('Error:', error);
+    }
     // Upload to S3
     console.log("Uploading to S3...");
     const key = `uploads/${videoId}-${Date.now()}.mp4`;
     const fileStream = fs.createReadStream(filePath);
-    await s3.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key, Body: fileStream, ContentType: "video/mp4" }));
+    await s3.send(new PutObjectCommand({ Bucket: process.env.AWS_S3_BUCKET!, Key: key, Body: fileStream, ContentType: "video/mp4" }));
     console.log("Upload complete.");
     // Update job as done
     await db.videoJob.update({

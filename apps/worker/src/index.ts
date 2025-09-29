@@ -10,7 +10,6 @@ import { db } from "@liveit/db";
 import dotenv from "dotenv";
 
 
-// const s3 = new S3Client({ region: process.env.AWS_REGION! });
 
 const ytdlp = new YtDlp();
 
@@ -18,14 +17,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
-
-console.log("Env vars:", {
-  AWS_REGION: process.env.AWS_REGION,
-  AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
-  // DATABASE_URL: process.env.DATABASE_URL ? "set" : "not set",
-});   
-
-// )
 const s3 = new S3Client({ region: process.env.AWS_REGION! });
 
 async function processJob(job: any) {
@@ -64,12 +55,6 @@ async function processJob(job: any) {
 
     // Download video
     console.log(`Processing job ${job.id} - downloading video...`);
-    // await new Promise<void>((resolve, reject) => {
-    //   ytdlp(videoUrl, { quality: "highest" })
-    //     .pipe(fs.createWriteStream(filePath))
-    //     .on("finish", () => resolve())
-    //     .on("error", reject);
-    // });
 
     const ytdlpArgs = [
       '-o', filePath,
@@ -77,23 +62,6 @@ async function processJob(job: any) {
     ];
 
     try {
-      // const output = await ytdlp.downloadAsync(
-      //   cleanUrl,
-      //   {
-      //     onProgress: (progress) => {
-      //       console.log(progress);
-      //     },
-      //   },
-      // );
-
-      // const output = await ytdlp.downloadAsync(
-      //   cleanUrl,
-      //   {
-      //     onProgress: (progress) => console.log(progress),
-      //     args: ytdlpArgs
-      //   }
-      // );
-
       const output = await ytdlp.downloadAsync(cleanUrl, {
         output: filePath,
         recodeVideo: 'mp4',

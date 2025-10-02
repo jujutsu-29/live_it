@@ -1,7 +1,4 @@
-// import ytdl from "ytdl-core";
-// import ytdl from '@distube/ytdl-core';
 import { YtDlp } from 'ytdlp-nodejs';
-
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -10,22 +7,12 @@ import { db } from "@liveit/db";
 import dotenv from "dotenv";
 
 
-// const s3 = new S3Client({ region: process.env.AWS_REGION! });
-
 const ytdlp = new YtDlp();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
-
-console.log("Env vars:", {
-  AWS_REGION: process.env.AWS_REGION,
-  AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
-  // DATABASE_URL: process.env.DATABASE_URL ? "set" : "not set",
-});   
-
-// )
 const s3 = new S3Client({ region: process.env.AWS_REGION! });
 
 async function processJob(job: any) {
@@ -41,17 +28,9 @@ async function processJob(job: any) {
     return;
   }
   let cleanUrl = videoUrl.split("&")[0];
-  // const videoId = ytdl.getURLVideoID(videoUrl);
 
-  let videoId;
-  try {
-    // videoId = ytdl.getURLVideoID(cleanUrl);
-    videoId = 2;
-  } catch {
-    console.error(`Invalid video URL: ${cleanUrl}`);
-    await db.videoJob.update({ where: { id: job.id }, data: { status: "failed" } });
-    return;
-  }
+  let videoId = job.id;
+
   const filePath = path.resolve(__dirname, `${videoId}.mp4`);
 
   try {
@@ -64,12 +43,6 @@ async function processJob(job: any) {
 
     // Download video
     console.log(`Processing job ${job.id} - downloading video...`);
-    // await new Promise<void>((resolve, reject) => {
-    //   ytdlp(videoUrl, { quality: "highest" })
-    //     .pipe(fs.createWriteStream(filePath))
-    //     .on("finish", () => resolve())
-    //     .on("error", reject);
-    // });
 
     const ytdlpArgs = [
       '-o', filePath,
@@ -77,23 +50,6 @@ async function processJob(job: any) {
     ];
 
     try {
-      // const output = await ytdlp.downloadAsync(
-      //   cleanUrl,
-      //   {
-      //     onProgress: (progress) => {
-      //       console.log(progress);
-      //     },
-      //   },
-      // );
-
-      // const output = await ytdlp.downloadAsync(
-      //   cleanUrl,
-      //   {
-      //     onProgress: (progress) => console.log(progress),
-      //     args: ytdlpArgs
-      //   }
-      // );
-
       const output = await ytdlp.downloadAsync(cleanUrl, {
         output: filePath,
         recodeVideo: 'mp4',
@@ -126,6 +82,7 @@ async function processJob(job: any) {
 
 // Poll DB for new jobs
 setInterval(async () => {
+  console.log("Checking for new jobs...");
   const jobs = await db.videoJob.findMany({ where: { status: "pending" } });
   for (const job of jobs) {
     console.log(`🔄 Processing job ${job.id}... before function call`);

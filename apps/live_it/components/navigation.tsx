@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Video, Calendar, BarChart3, Settings, LogOut, User } from "lucide-react"
+import { Video, Calendar, BarChart3, Settings, LogOut, User, Library, Link2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +22,8 @@ const navigation = [
   { name: "Schedule", href: "/schedule", icon: Calendar },
   { name: "Studio", href: "/studio", icon: Video },
   { name: "Settings", href: "/settings", icon: Settings },
+  { name: "YouTube Links", href: "/youtube-links", icon: Link2 },
+  { name: "Video Library", href: "/video-library", icon: Library },
 ]
 
 export function Navigation() {

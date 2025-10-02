@@ -1,14 +1,10 @@
-// import ytdl from "ytdl-core";
-// import ytdl from '@distube/ytdl-core';
 import { YtDlp } from 'ytdlp-nodejs';
-
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { db } from "@liveit/db";
 import dotenv from "dotenv";
-
 
 
 const ytdlp = new YtDlp();
@@ -32,17 +28,9 @@ async function processJob(job: any) {
     return;
   }
   let cleanUrl = videoUrl.split("&")[0];
-  // const videoId = ytdl.getURLVideoID(videoUrl);
 
-  let videoId;
-  try {
-    // videoId = ytdl.getURLVideoID(cleanUrl);
-    videoId = 2;
-  } catch {
-    console.error(`Invalid video URL: ${cleanUrl}`);
-    await db.videoJob.update({ where: { id: job.id }, data: { status: "failed" } });
-    return;
-  }
+  let videoId = job.id;
+
   const filePath = path.resolve(__dirname, `${videoId}.mp4`);
 
   try {
@@ -94,6 +82,7 @@ async function processJob(job: any) {
 
 // Poll DB for new jobs
 setInterval(async () => {
+  console.log("Checking for new jobs...");
   const jobs = await db.videoJob.findMany({ where: { status: "pending" } });
   for (const job of jobs) {
     console.log(`🔄 Processing job ${job.id}... before function call`);

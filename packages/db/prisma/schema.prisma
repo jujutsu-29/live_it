@@ -78,3 +78,19 @@ model VideoJob {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+enum VideoStatus {
+  active
+  archived
+  deleted
+}
+
+model video {
+  id          String   @id @default(cuid())
+  url         String
+  title       String
+  description String?
+  addedDate   DateTime    @default(now())
+  thumbnail   String?
+  status      VideoStatus   @default(active)
+}

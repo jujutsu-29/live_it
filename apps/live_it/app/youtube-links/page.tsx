@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Link2, Trash2, ExternalLink, Plus, CheckCircle, Copy } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import axios from "axios"
+import { db } from "@liveit/db";
 
 interface YouTubeLink {
   id: string
@@ -33,25 +35,7 @@ export default function YouTubeLinksPage() {
       addedDate: "2024-12-10",
       views: 15420,
       status: "active",
-    },
-    {
-      id: "2",
-      url: "https://youtube.com/watch?v=jNQXAC9IVRw",
-      title: "Weekly Tech Talk #45",
-      description: "Deep dive into modern web development practices and tools",
-      addedDate: "2024-12-08",
-      views: 8750,
-      status: "active",
-    },
-    {
-      id: "3",
-      url: "https://youtube.com/watch?v=9bZkp7q19f0",
-      title: "Community Q&A Session",
-      description: "Answering your questions about our platform and upcoming features",
-      addedDate: "2024-12-05",
-      views: 5230,
-      status: "active",
-    },
+    }
   ])
 
   const [newLink, setNewLink] = useState({
@@ -62,8 +46,9 @@ export default function YouTubeLinksPage() {
 
   const [isAdding, setIsAdding] = useState(false)
 
-  const handleAddLink = () => {
-    if (!newLink.url || !newLink.title) {
+  const handleAddLink =async () => {
+    // console.log("hi there coming in", newLink);
+    if (!newLink.url) {
       toast({
         title: "Missing Information",
         description: "Please provide both URL and title",
@@ -71,6 +56,9 @@ export default function YouTubeLinksPage() {
       })
       return
     }
+      // console.log("hi there coming in", newLink);
+      const result = await axios.post('/api/download', { videoUrl: newLink.url });
+      console.log("Result from adding link:", result);
 
     const link: YouTubeLink = {
       id: Date.now().toString(),
@@ -147,7 +135,7 @@ export default function YouTubeLinksPage() {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <Label htmlFor="title">Video Title *</Label>
                     <Input
                       id="title"
@@ -156,9 +144,9 @@ export default function YouTubeLinksPage() {
                       onChange={(e) => setNewLink({ ...newLink, title: e.target.value })}
                       className="bg-background"
                     />
-                  </div>
+                  </div> */}
 
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <Label htmlFor="description">Description (Optional)</Label>
                     <Textarea
                       id="description"
@@ -167,7 +155,7 @@ export default function YouTubeLinksPage() {
                       onChange={(e) => setNewLink({ ...newLink, description: e.target.value })}
                       className="bg-background min-h-[100px]"
                     />
-                  </div>
+                  </div> */}
 
                   <div className="flex gap-3">
                     <Button onClick={handleAddLink} className="hover-lift">

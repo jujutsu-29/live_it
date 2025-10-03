@@ -24,7 +24,8 @@ interface UploadedVideo {
   s3Key: string | null;
   addedDate: Date;
   thumbnail: string | null;
-  status: "active" | "archived" | "deleted"
+  status: "active" | "archived" | "deleted" | "processing" | "failed" | "ready";
+  duration: number;
 }
 
 export default function VideoLibraryPage() {

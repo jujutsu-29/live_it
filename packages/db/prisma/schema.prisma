@@ -101,7 +101,8 @@ model Video {
   addedDate   DateTime    @default(now())
   thumbnail   String?
   status      VideoStatus   @default(active)
-
+  duration    Int?        
+  size        String?       
   jobs         VideoJob[]
 
   @@index([userId])

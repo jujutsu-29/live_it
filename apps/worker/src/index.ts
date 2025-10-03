@@ -83,9 +83,21 @@ async function processJob(job: any) {
 // Poll DB for new jobs
 setInterval(async () => {
   console.log("Checking for new jobs...");
-  const jobs = await db.videoJob.findMany({ where: { status: "pending" } });
-  for (const job of jobs) {
-    console.log(`🔄 Processing job ${job.id}... before function call`);
-    processJob(job); // process independently
-  }
+  // const jobs = await db.videoJob.findMany({ where: { status: "pending" } });
+  // for (const job of jobs) {
+  //   console.log(`🔄 Processing job ${job.id}... before function call`);
+  //   processJob(job); // process independently
+  // }
+
+  const jobs = await db.videoJob.findMany({
+  where: { status: "pending" },
+  include: { video: {
+    select: { url: true }
+  } }, // fetch related video
+});
+for (const job of jobs) {
+  console.log(job.video.url); // access videoUrl cleanly
+  processJob(job); // process independently
+}
+
 }, 5000); // every 5s

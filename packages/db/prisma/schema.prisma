@@ -24,6 +24,7 @@ model User {
   emailVerified DateTime? @default(now())
   accounts      Account[]
   sessions      Session[]
+  videos    Video[]
 }
 
 model Account {
@@ -71,12 +72,16 @@ enum JobStatus {
 
 model VideoJob {
   id        Int      @id @default(autoincrement())
-  userId    String
-  videoUrl  String
+  videoId   String
+  video      Video     @relation(fields: [videoId], references: [id], onDelete: Cascade)
   status    JobStatus  @default(pending) // pending, processing, done, failed
   s3Key     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([videoId])
+  @@map("video_jobs")
 }
 
 enum VideoStatus {
@@ -85,12 +90,21 @@ enum VideoStatus {
   deleted
 }
 
-model video {
+model Video {
   id          String   @id @default(cuid())
+  userId      String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   url         String
+  s3Key        String?
   title       String
   description String?
   addedDate   DateTime    @default(now())
   thumbnail   String?
   status      VideoStatus   @default(active)
+
+  jobs         VideoJob[]
+
+  @@index([userId])
+  @@map("videos")
 }
+

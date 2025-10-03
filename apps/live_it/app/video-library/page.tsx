@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Navigation } from "@/components/navigation"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +10,9 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Library, Search, Download, Trash2, Eye, Clock, HardDrive, Filter } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useSession } from "next-auth/react"
+import { redirect } from "next/navigation"
+import { db } from "@liveit/db"
 
 interface UploadedVideo {
   id: string
@@ -30,21 +33,7 @@ export default function VideoLibraryPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("all")
 
-  const [videos, setVideos] = useState<UploadedVideo[]>([
-    {
-      id: "6",
-      title: "Customer Testimonials Compilation",
-      filename: "testimonials-2024.mp4",
-      s3Url: "https://s3.amazonaws.com/bucket/testimonials-2024.mp4",
-      thumbnailUrl: "/customer-testimonials-video.jpg",
-      uploadDate: "2024-11-28T09:30:00Z",
-      duration: 420,
-      fileSize: 178257920,
-      resolution: "1920x1080",
-      status: "ready",
-      views: 456,
-    },
-  ])
+  const [videos, setVideos] = useState<UploadedVideo[]>([])
 
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
@@ -103,6 +92,25 @@ export default function VideoLibraryPage() {
 
   const totalSize = videos.reduce((acc, video) => acc + video.fileSize, 0)
   const totalViews = videos.reduce((acc, video) => acc + video.views, 0)
+
+  const { data: session } = useSession();
+
+  if (!session || !session.user) {
+    return redirect('/signin');
+  }
+
+  const user = session.user;
+
+  useEffect(() => {
+    const fetchVideos = async () => {
+      const result = await db.Video.findMany({
+        where: { userId: user.id },
+        orderBy: { addedDate: 'desc' }
+      });
+      setVideos(result);
+    }
+    fetchVideos();
+  }, []);
 
   return (
     <AuthGuard>

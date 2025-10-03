@@ -33,7 +33,7 @@ export async function POST(req: Request) {
       },
     });
 
-    await db.video.create({
+    await db.Video.create({
       data: {
         url: videoUrl,
         title: videoData.title,

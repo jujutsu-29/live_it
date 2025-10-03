@@ -13,25 +13,27 @@ import { useToast } from "@/hooks/use-toast"
 import { useSession } from "next-auth/react"
 import { redirect } from "next/navigation"
 import { db } from "@liveit/db"
+import { fetchVideos } from "@/lib/actions/videos"
 
 interface UploadedVideo {
-  id: string
-  title: string
-  filename: string
-  s3Url: string
-  thumbnailUrl: string
-  uploadDate: string
-  duration: number
-  fileSize: number
-  resolution: string
-  status: "processing" | "ready" | "failed"
-  views: number
+  title: string;
+  id: string;
+  url: string;
+  description: string | null;
+  userId: string;
+  s3Key: string | null;
+  addedDate: Date;
+  thumbnail: string | null;
+  status: "active" | "archived" | "deleted"
 }
 
 export default function VideoLibraryPage() {
   const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("all")
+  
+
+  
 
   const [videos, setVideos] = useState<UploadedVideo[]>([])
 
@@ -56,11 +58,11 @@ export default function VideoLibraryPage() {
 
   const getStatusColor = (status: UploadedVideo["status"]) => {
     switch (status) {
-      case "ready":
+      case "active":
         return "bg-green-500/10 text-green-500 border-green-500/20"
-      case "processing":
+      case "archived":
         return "bg-blue-500/10 text-blue-500 border-blue-500/20"
-      case "failed":
+      case "deleted":
         return "bg-red-500/10 text-red-500 border-red-500/20"
       default:
         return "bg-muted text-muted-foreground"
@@ -78,7 +80,7 @@ export default function VideoLibraryPage() {
   const handleDownload = (video: UploadedVideo) => {
     toast({
       title: "Download Started",
-      description: `Downloading ${video.filename}`,
+      description: `Downloading ${video.title}`,
     })
   }
 
@@ -95,22 +97,18 @@ export default function VideoLibraryPage() {
 
   const { data: session } = useSession();
 
-  if (!session || !session.user) {
-    return redirect('/signin');
-  }
+  if (!session || !session.user?.id) {
+  return redirect("/signin");
+}
 
-  const user = session.user;
-
-  useEffect(() => {
-    const fetchVideos = async () => {
-      const result = await db.Video.findMany({
-        where: { userId: user.id },
-        orderBy: { addedDate: 'desc' }
-      });
+  const userId = session.user.id;
+    useEffect(() => {
+    const load = async () => {
+      const result = await fetchVideos(userId);
       setVideos(result);
-    }
-    fetchVideos();
-  }, []);
+    };
+    load();
+  }, [userId]);
 
   return (
     <AuthGuard>
@@ -120,7 +118,7 @@ export default function VideoLibraryPage() {
         <main className="container mx-auto px-4 py-8 animate-fade-in">
           <div className="mb-8 animate-slide-up">
             <h1 className="text-3xl font-bold text-foreground mb-2">Video Library</h1>
-            <p className="text-muted-foreground">Manage all your uploaded videos stored on S3</p>
+            <p className="text-muted-foreground">Manage all your uploaded videos</p>
           </div>
 
           {/* Stats Cards */}
@@ -133,7 +131,7 @@ export default function VideoLibraryPage() {
               <CardContent>
                 <div className="text-2xl font-bold">{videos.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {videos.filter((v) => v.status === "ready").length} ready to stream
+                  {videos.filter((v) => v.status === "active").length} ready to stream
                 </p>
               </CardContent>
             </Card>
@@ -149,7 +147,7 @@ export default function VideoLibraryPage() {
               </CardContent>
             </Card>
 
-            <Card className="hover-lift animate-stagger">
+            {/* <Card className="hover-lift animate-stagger">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Views</CardTitle>
                 <Eye className="h-4 w-4 text-muted-foreground" />
@@ -158,7 +156,7 @@ export default function VideoLibraryPage() {
                 <div className="text-2xl font-bold">{totalViews.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">+15% from last month</p>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
 
           {/* Search and Filter */}
@@ -199,7 +197,7 @@ export default function VideoLibraryPage() {
           <Card className="hover-lift animate-slide-up">
             <CardHeader>
               <CardTitle>Your Videos ({filteredVideos.length})</CardTitle>
-              <CardDescription>All your uploaded videos with metadata</CardDescription>
+              <CardDescription>All your uploaded videos</CardDescription>
             </CardHeader>
             <CardContent>
               {filteredVideos.length === 0 ? (
@@ -222,7 +220,7 @@ export default function VideoLibraryPage() {
                     >
                       <div className="relative aspect-video bg-muted">
                         <img
-                          src={video.thumbnailUrl || "/placeholder.svg"}
+                          src={video.thumbnail || "/placeholder.svg"}
                           alt={video.title}
                           className="w-full h-full object-cover"
                         />
@@ -237,22 +235,20 @@ export default function VideoLibraryPage() {
                       <div className="p-4 space-y-3">
                         <div>
                           <h3 className="font-medium text-foreground mb-1 line-clamp-2">{video.title}</h3>
-                          <p className="text-xs text-muted-foreground">{video.filename}</p>
+                          <p className="text-xs text-muted-foreground">{video.title}</p>
                         </div>
 
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {new Date(video.uploadDate).toLocaleDateString()}
+                            {new Date(video.addedDate).toLocaleDateString()}
                           </div>
                           <div className="flex items-center gap-1">
-                            <Eye className="h-3 w-3" />
-                            {video.views}
                           </div>
                         </div>
 
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{video.resolution}</span>
+                          {/* <span>{video.resolution}</span> */}
                           <span>{formatFileSize(video.fileSize)}</span>
                         </div>
 
@@ -261,7 +257,7 @@ export default function VideoLibraryPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDownload(video)}
-                            disabled={video.status !== "ready"}
+                            disabled={video.status !== "active"}
                             className="flex-1 bg-transparent hover-lift"
                           >
                             <Download className="h-4 w-4 mr-1" />

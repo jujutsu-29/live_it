@@ -2,10 +2,21 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**",
+        ".next/**"
+      ]
+    },
+    "@liveit/db#build": {
+      "outputs": []
     },
     "dev": {
+      "dependsOn": [
+        "^dev"
+      ],
       "cache": false
     },
     "lint": {},

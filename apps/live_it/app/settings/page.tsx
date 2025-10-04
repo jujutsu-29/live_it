@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,14 +28,21 @@ export default function SettingsPage() {
   const user = session?.user
 
   const [profile, setProfile] = useState({
-    name: user?.name ?? "",
-    email: user?.email ?? "",
+    name: "",
+    email: "",
     bio: "Content creator and live streamer",
     // website: "https://johndoe.com",
   })
 
-  console.log("User in Settings page:", profile)
-  console.log("User in Settings page:", user)
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        name: user.name ?? "",
+        email: user.email ?? "",
+        bio: "Content creator and live streamer",
+      })
+    }
+  }, [user])
 
   return (
     <AuthGuard>

@@ -28,17 +28,7 @@ interface YouTubeLink {
 
 export default function YouTubeLinksPage() {
   const { toast } = useToast()
-  const [links, setLinks] = useState<YouTubeLink[]>([
-    {
-      id: "1",
-      url: "https://youtube.com/watch?v=dQw4w9WgXcQ",
-      title: "Product Launch Livestream",
-      description: "Our biggest product reveal of the year with exclusive demos and Q&A",
-      addedDate: "2024-12-10",
-      views: 15420,
-      status: "active",
-    }
-  ])
+  const [links, setLinks] = useState<YouTubeLink[]>([])
 
   const [newLink, setNewLink] = useState({
     url: "",
@@ -71,7 +61,7 @@ export default function YouTubeLinksPage() {
     // console.log("hi there coming in", newLink);
     // const result = await axios.post('/api/download', { videoUrl: newLink.url });
     const result = await axios.post('http://localhost:4000/process-job', { videoUrl: newLink.url, userId: user.id });
-    console.log("Result from adding link:", result);
+    // console.log("Result from adding link:", result);
 
     const link: YouTubeLink = {
       id: Date.now().toString(),

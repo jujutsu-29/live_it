@@ -69,8 +69,8 @@ export async function processJob(videoUrl: string, videoId: string) {
     }
   } finally {
     // Always clean up local files
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
+    // if (fs.existsSync(filePath)) {
+    //   fs.unlinkSync(filePath);
+    // }
   }
 }

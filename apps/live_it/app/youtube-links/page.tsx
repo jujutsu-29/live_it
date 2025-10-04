@@ -13,6 +13,8 @@ import { Link2, Trash2, ExternalLink, Plus, CheckCircle, Copy } from "lucide-rea
 import { useToast } from "@/hooks/use-toast"
 import axios from "axios"
 import { db } from "@liveit/db";
+import { useSession } from "next-auth/react"
+import { redirect } from "next/navigation";
 
 interface YouTubeLink {
   id: string
@@ -46,7 +48,15 @@ export default function YouTubeLinksPage() {
 
   const [isAdding, setIsAdding] = useState(false)
 
-  const handleAddLink =async () => {
+  const { data: session } = useSession()
+  const user = session?.user
+
+  if (!session || !user || !user.id) {
+    redirect("/signin")
+    return null
+  }
+
+  const handleAddLink = async () => {
     // console.log("hi there coming in", newLink);
     if (!newLink.url) {
       toast({
@@ -56,9 +66,12 @@ export default function YouTubeLinksPage() {
       })
       return
     }
-      // console.log("hi there coming in", newLink);
-      const result = await axios.post('/api/download', { videoUrl: newLink.url });
-      console.log("Result from adding link:", result);
+
+
+    // console.log("hi there coming in", newLink);
+    // const result = await axios.post('/api/download', { videoUrl: newLink.url });
+    const result = await axios.post('http://localhost:4000/process-job', { videoUrl: newLink.url, userId: user.id });
+    console.log("Result from adding link:", result);
 
     const link: YouTubeLink = {
       id: Date.now().toString(),

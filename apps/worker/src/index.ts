@@ -1,105 +1,52 @@
-import { YtDlp } from 'ytdlp-nodejs';
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { db } from "@liveit/db";
-import dotenv from "dotenv";
+import express from "express";
+import { processJob } from "./processingJob.js";
+import { getVideoMetadata } from "./videoMetadata.js";
+import cors from "cors";
+
+const app = express();
+app.use(express.json());
+
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST"],
+  credentials: true,
+}));
 
 
-const ytdlp = new YtDlp();
+const PORT = process.env.PORT || 4000;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+app.listen(PORT, () => {
+  console.log(`Worker listening on port ${PORT}`);
+});
 
-dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
-const s3 = new S3Client({ region: process.env.AWS_REGION! });
-
-async function processJob(job: any) {
-  // console.log("job thing is ", job);
-  const videoUrl = job.video.url;
-
-  // console.log("video url is ", videoUrl);
-
-  if (!videoUrl) {
-    console.error(`❌ Job ${job.id} has no video URL.`);
-    await db.videoJob.update({
-      where: { id: job.id },
-      data: { status: "failed" },
-    });
-    return;
-  }
-  let cleanUrl = videoUrl.split("&")[0];
-
-  let videoId = job.id;
-
-  const filePath = path.resolve(__dirname, `${videoId}.mp4`);
+app.post("/process-job", async (req, res) => {
+  // console.log("Received job:", req);
+  // console.log("Received job:", req.body);
+  const {userId, videoUrl} = req.body;
 
   try {
-    console.log(`Starting job ${job.id} for db from pending to processing`);
-    // Update status
-    await db.videoJob.update({
-      where: { id: job.id },
-      data: { status: "processing" },
+    const videoData = await getVideoMetadata(videoUrl);
+
+    const video = await db.video.create({
+      data: {
+        userId: userId,
+        url: videoUrl,
+        title: videoData.title,
+        thumbnail: videoData.thumbnailUrl,
+        duration: videoData.duration
+      },
     });
 
-    // Download video
-    console.log(`Processing job ${job.id} - downloading video...`);
+    await processJob(videoUrl, video.id);
 
-    const ytdlpArgs = [
-      '-o', filePath,
-      '--recode-video', 'mp4'
-    ];
-
-    try {
-      const output = await ytdlp.downloadAsync(cleanUrl, {
-        output: filePath,
-        recodeVideo: 'mp4',
-        onProgress: (progress) => console.log(progress),
-    });
-
-      console.log('Download completed:', output);
-    } catch (error) {
-      console.error('Error:', error);
-    }
-    // Upload to S3
-    console.log("Uploading to S3...");
-    const key = `uploads/${videoId}-${Date.now()}.mp4`;
-    const fileStream = fs.createReadStream(filePath);
-    await s3.send(new PutObjectCommand({ Bucket: process.env.AWS_S3_BUCKET!, Key: key, Body: fileStream, ContentType: "video/mp4" }));
-    console.log("Upload complete.");
-    // Update job as done
-    await db.videoJob.update({
-      where: { id: job.id },
-      data: { status: "done", s3Key: key },
-    });
-    console.log("Cleaning up local file...");
-    fs.unlinkSync(filePath);
-    console.log(`✅ Job ${job.id} completed.`);
   } catch (err) {
-    await db.videoJob.update({ where: { id: job.id }, data: { status: "failed" } });
-    console.error(`❌ Job ${job.id} failed:`, err);
+    console.error("Error processing job:", err);
+    return res.status(500).send("Error processing job");
   }
-}
 
-// Poll DB for new jobs
-setInterval(async () => {
-  console.log("Checking for new jobs...");
-  // const jobs = await db.videoJob.findMany({ where: { status: "pending" } });
-  // for (const job of jobs) {
-  //   console.log(`🔄 Processing job ${job.id}... before function call`);
-  //   processJob(job); // process independently
-  // }
+  res.status(200).send("Job processing Done");
+})
 
-  const jobs = await db.videoJob.findMany({
-  where: { status: "pending" },
-  include: { video: {
-    select: { url: true }
-  } }, // fetch related video
-});
-for (const job of jobs) {
-  console.log(job.video.url); // access videoUrl cleanly
-  processJob(job); // process independently
-}
 
-}, 5000); // every 5s
+

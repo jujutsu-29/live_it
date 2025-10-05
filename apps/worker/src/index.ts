@@ -1,6 +1,6 @@
 import { db } from "@liveit/db";
 import express from "express";
-import { processJob } from "./processingJob.js";
+import { deleteVideoFromS3, processJob } from "./processingJob.js";
 import { getVideoMetadata } from "./videoMetadata.js";
 import cors from "cors";
 
@@ -23,7 +23,7 @@ app.listen(PORT, () => {
 app.post("/process-job", async (req, res) => {
   // console.log("Received job:", req);
   // console.log("Received job:", req.body);
-  const {userId, videoUrl} = req.body;
+  const { userId, videoUrl } = req.body;
 
   try {
     const videoData = await getVideoMetadata(videoUrl);
@@ -38,15 +38,49 @@ app.post("/process-job", async (req, res) => {
       },
     });
 
-    await processJob(videoUrl, video.id);
+    //no await here video download and upload will happen on background, we dont want to keep user waiting
+    // processJob(videoUrl, video.id);
 
+    setImmediate(() => {
+      processJob(videoUrl, video.id).catch(err => {
+        console.error(`Background job failed for ${video.id}:`, err);
+      });
+    });
+    return res.status(200).json({ message: "Job processing Done", data: video });
   } catch (err) {
     console.error("Error processing job:", err);
     return res.status(500).send("Error processing job");
   }
 
-  res.status(200).send("Job processing Done");
 })
 
+app.post("/delete-video", async (req, res) => {
+  // console.log("Delete request is ", req);
+  const id = req.body.id;
+  // console.log("request body is ", req.body.id);
+  console.log("Delete request for video ID:", id);
+  if (!id) {
+    return res.status(400).send("Video ID is required");
+  }
+
+  try {
+    const video = await db.video.findUnique({ where: { id: id } });
+    // if (!video) return res.status(404).json({ error: "Video not found" });
+    console.log("video found sir ji ", video);
+    if (video?.s3Key) {
+      console.log("Deleting video from S3 with key:", video.s3Key);
+      const resultAWS = await deleteVideoFromS3(video.s3Key);
+      console.log(`Deleted video ${id} from S3`, resultAWS);
+    }
+
+    await db.video.delete({ where: { id: id } });
+    console.log(`Deleted video ${id} from DB`);
+    return res.status(200).json({ message: "Video deleted successfully" });
+
+  } catch (error) {
+    console.error("Error deleting video:", error);
+    return res.status(500).send("Error deleting video");
+  }
+})
 
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Navigation } from "@/components/navigation"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,15 +15,14 @@ import axios from "axios"
 import { db } from "@liveit/db";
 import { useSession } from "next-auth/react"
 import { redirect } from "next/navigation";
+import { fetchVideos, handleDelete } from "@/lib/actions/videos"
 
 interface YouTubeLink {
   id: string
   url: string
   title: string
-  description: string
   addedDate: string
-  views: number
-  status: "active" | "archived"
+  status: "active" | "archived" | "failed"
 }
 
 export default function YouTubeLinksPage() {
@@ -36,15 +35,35 @@ export default function YouTubeLinksPage() {
     description: "",
   })
 
-  const [isAdding, setIsAdding] = useState(false)
-
   const { data: session } = useSession()
   const user = session?.user
 
-  if (!session || !user || !user.id) {
-    redirect("/signin")
-    return null
+  if (!session || !user || !user.id || user.id === undefined) {
+    return redirect("/signin")
+    // return null
   }
+
+  useEffect(() => {
+    async function fetchData() {
+      if(user?.id){
+        const result = await fetchVideos(user.id);
+        const links: YouTubeLink[] = result.map(video => ({
+      ...video,
+      status: "active",
+      url: video.url,
+      title: video.title || "Untitled",
+      addedDate: video.addedDate.toISOString().split("T")[0],
+    }));
+        setLinks(links);
+      }
+    }
+    fetchData();
+  }, [])
+
+
+  const [isAdding, setIsAdding] = useState(false)
+
+  
 
   const handleAddLink = async () => {
     // console.log("hi there coming in", newLink);
@@ -67,9 +86,7 @@ export default function YouTubeLinksPage() {
       id: Date.now().toString(),
       url: newLink.url,
       title: newLink.title,
-      description: newLink.description,
       addedDate: new Date().toISOString().split("T")[0],
-      views: 0,
       status: "active",
     }
 
@@ -83,13 +100,13 @@ export default function YouTubeLinksPage() {
     })
   }
 
-  const handleDeleteLink = (id: string) => {
-    setLinks(links.filter((link) => link.id !== id))
-    toast({
-      title: "Link Removed",
-      description: "The YouTube link has been deleted",
-    })
-  }
+  // const handleDelete = (id: string) => {
+  //   setLinks(links.filter((link) => link.id !== id))
+  //   toast({
+  //     title: "Link Removed",
+  //     description: "The YouTube link has been deleted",
+  //   })
+  // }
 
   const handleCopyLink = (url: string) => {
     navigator.clipboard.writeText(url)
@@ -137,28 +154,6 @@ export default function YouTubeLinksPage() {
                       className="bg-background"
                     />
                   </div>
-
-                  {/* <div className="space-y-2">
-                    <Label htmlFor="title">Video Title *</Label>
-                    <Input
-                      id="title"
-                      placeholder="Enter video title"
-                      value={newLink.title}
-                      onChange={(e) => setNewLink({ ...newLink, title: e.target.value })}
-                      className="bg-background"
-                    />
-                  </div> */}
-
-                  {/* <div className="space-y-2">
-                    <Label htmlFor="description">Description (Optional)</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Add a description for this video"
-                      value={newLink.description}
-                      onChange={(e) => setNewLink({ ...newLink, description: e.target.value })}
-                      className="bg-background min-h-[100px]"
-                    />
-                  </div> */}
 
                   <div className="flex gap-3">
                     <Button onClick={handleAddLink} className="hover-lift">
@@ -220,8 +215,8 @@ export default function YouTubeLinksPage() {
 
                           <div className="flex items-center gap-4 text-xs text-muted-foreground">
                             <span>Added: {new Date(link.addedDate).toLocaleDateString()}</span>
-                            <span>•</span>
-                            <span>{link.views.toLocaleString()} views</span>
+                            {/* <span>•</span> */}
+                            {/* <span>{link.views.toLocaleString()} views</span> */}
                           </div>
 
                           <div className="flex items-center gap-2">
@@ -248,7 +243,7 @@ export default function YouTubeLinksPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDeleteLink(link.id)}
+                            onClick={() => handleDelete(link.id)}
                             className="bg-transparent hover:bg-destructive/10 hover:text-destructive hover-lift"
                           >
                             <Trash2 className="h-4 w-4" />

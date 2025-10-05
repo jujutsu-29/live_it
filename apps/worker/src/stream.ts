@@ -1,7 +1,8 @@
 import { spawn } from "child_process";
 
 const inputFile = "F:\\projects\\live_it\\apps\\worker\\dist\\07ac69bc-7798-4162-a267-90f0ab941048.mp4";
-const streamKey = "z6xz-w1ch-874z-v32f-013s";
+// const streamKey = "z6xz-w1ch-874z-v32f-013s";
+const streamKey = "t956-r8yt-pstg-vz4f-32d6";
 
 function startStreaming() {
   const ffmpeg = spawn("ffmpeg", [

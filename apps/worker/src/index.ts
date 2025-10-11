@@ -3,6 +3,7 @@ import express from "express";
 import { deleteVideoFromS3, processJob } from "./processingJob.js";
 import { getVideoMetadata } from "./videoMetadata.js";
 import cors from "cors";
+import { downloadVideo, killStreaming, startStreaming } from "./stream.js";
 
 const app = express();
 app.use(express.json());
@@ -83,4 +84,38 @@ app.post("/delete-video", async (req, res) => {
   }
 })
 
+app.post("/start-stream", async (req, res) => {
+  try {
+    const { s3Key, streamKey } = req.body;
+    if (!s3Key || !streamKey)
+      return res.status(400).json({ error: "Missing s3Key or streamKey" });
+
+    // Step 1: Download video
+    const localPath = await downloadVideo(s3Key);
+
+    // Step 2: Start streaming
+    startStreaming(streamKey, localPath);
+
+    return res.json({ status: "streaming started", localPath });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+app.post("/stop-stream", async (req, res) => {
+  try {
+    killStreaming();
+    return res.json({ status: "stream stopped" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to stop stream" });
+  }
+});
+
+app.listen(4000, () => console.log("🎬 Worker running on port 4000"));
+
+app.get("/", (req, res) => {
+  res.send("Worker is running");
+});
 

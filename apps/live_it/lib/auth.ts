@@ -86,25 +86,47 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt",
   },
   callbacks: {
+    // async jwt({ token, account, user }) {
+    //   const t = token as ExtendedToken;
+
+    //   if (account && user) {
+    //     return {
+    //       accessToken: account.access_token,
+    //       accessTokenExpires: Date.now() + (account.expires_in ?? 0) * 1000,
+    //       refreshToken: account.refresh_token,
+    //       user,
+    //     };
+    //   }
+
+    //   if (t.accessTokenExpires && Date.now() < t.accessTokenExpires) {
+    //     return t;
+    //   }
+
+    //   // else expired:
+    //   return refreshAccessToken(t);
+    // },
     async jwt({ token, account, user }) {
-      const t = token as ExtendedToken;
+  const t = token as ExtendedToken;
 
-      if (account && user) {
-        return {
-          accessToken: account.access_token,
-          accessTokenExpires: Date.now() + (account.expires_in ?? 0) * 1000,
-          refreshToken: account.refresh_token,
-          user,
-        };
-      }
+  // 🟢 First time login
+  if (account && user) {
+    return {
+      accessToken: account.access_token,
+      accessTokenExpires: Date.now() + (account.expires_in ?? 0) * 1000,
+      // Keep the existing refresh token if not provided again
+      refreshToken: account.refresh_token ?? t.refreshToken,
+      user,
+    };
+  }
 
-      if (t.accessTokenExpires && Date.now() < t.accessTokenExpires) {
-        return t;
-      }
+  // 🟢 If token still valid, return it
+  if (t.accessTokenExpires && Date.now() < t.accessTokenExpires) {
+    return t;
+  }
 
-      // else expired:
-      return refreshAccessToken(t);
-    },
+  // 🟠 Else refresh it
+  return refreshAccessToken(t);
+},
     async session({ session, token }) {
       return {
         ...session,

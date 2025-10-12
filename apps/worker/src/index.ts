@@ -86,15 +86,26 @@ app.post("/delete-video", async (req, res) => {
 
 app.post("/start-stream", async (req, res) => {
   try {
-    const { s3Key, streamKey } = req.body;
-    if (!s3Key || !streamKey)
-      return res.status(400).json({ error: "Missing s3Key or streamKey" });
+    const {id, streamKey } = req.body;
+    if (!id || !streamKey)
+      return res.status(400).json({ error: "Missing id or streamKey" });
 
+    const video = await db.video.findUnique({ where: { id } });
+    if (!video || !video.s3Key)
+      return res.status(404).json({ error: "Video not found or not processed yet" });
+    const s3Key = video.s3Key;
+
+    console.log(`🚀 Starting stream for video ID: ${id}, S3 Key: ${s3Key}`);
     // Step 1: Download video
     const localPath = await downloadVideo(s3Key);
 
     // Step 2: Start streaming
-    startStreaming(streamKey, localPath);
+    startStreaming(id, streamKey, localPath);
+
+    await db.video.updateMany({
+      where: { id: id },
+      data: { status: 'streaming', live_startedAt: new Date() },
+    });
 
     return res.json({ status: "streaming started", localPath });
   } catch (error) {
@@ -105,7 +116,16 @@ app.post("/start-stream", async (req, res) => {
 
 app.post("/stop-stream", async (req, res) => {
   try {
-    killStreaming();
+    const { id } = req.body;
+    console.log("Request to stop stream for video job ID:", id);
+    if (!id) return res.status(400).json({ error: "Missing id" });
+    console.log(`🛑 Stopping stream for video job ID: ${id}`);
+    killStreaming(id);
+
+    await db.video.updateMany({
+      where: { id: id },
+      data: { status: 'stopped', live_stoppedAt: new Date() },
+    });
     return res.json({ status: "stream stopped" });
   } catch (err) {
     console.error(err);

@@ -20,12 +20,10 @@ interface UploadedVideo {
   id: string;
   url: string;
   description: string | null;
-  userId: string;
-  s3Key: string | null;
   addedDate: Date;
   thumbnail: string | null;
-  status: "active" | "archived" | "deleted" | "processing" | "failed" | "ready";
-  duration: number;
+  status: "active" | "deleted" | "streaming" | "stopped" | "failed"
+  duration: number | null;
 }
 
 export default function VideoLibraryPage() {
@@ -61,9 +59,13 @@ export default function VideoLibraryPage() {
     switch (status) {
       case "active":
         return "bg-green-500/10 text-green-500 border-green-500/20"
-      case "archived":
+      case "streaming":
         return "bg-blue-500/10 text-blue-500 border-blue-500/20"
       case "deleted":
+        return "bg-red-500/10 text-red-500 border-red-500/20"
+      case "stopped":
+        return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+      case "failed":
         return "bg-red-500/10 text-red-500 border-red-500/20"
       default:
         return "bg-muted text-muted-foreground"
@@ -87,14 +89,14 @@ export default function VideoLibraryPage() {
 
   const filteredVideos = videos.filter((video) => {
     const matchesSearch =
-      video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      video.filename.toLowerCase().includes(searchQuery.toLowerCase())
+      video.title.toLowerCase().includes(searchQuery.toLowerCase()) 
+      // ||      video.filename.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesFilter = filterStatus === "all" || video.status === filterStatus
     return matchesSearch && matchesFilter
   })
 
   const totalSize = videos.reduce((acc, video) => acc + video.fileSize, 0)
-  const totalViews = videos.reduce((acc, video) => acc + video.views, 0)
+  // const totalViews = videos.reduce((acc, video) => acc + video.views, 0)
 
   const { data: session } = useSession();
 

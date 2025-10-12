@@ -74,7 +74,7 @@ model VideoJob {
   id        Int      @id @default(autoincrement())
   videoId   String
   video      Video     @relation(fields: [videoId], references: [id], onDelete: Cascade)
-  status    JobStatus  @default(pending) // pending, processing, done, failed
+  status    JobStatus  @default(pending)
   s3Key     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -86,8 +86,10 @@ model VideoJob {
 
 enum VideoStatus {
   active
-  archived
   deleted
+  streaming
+  stopped
+  failed
 }
 
 model Video {
@@ -104,6 +106,10 @@ model Video {
   duration    Int?        
   size        String?       
   jobs         VideoJob[]
+
+  live_startedAt DateTime?
+  live_stoppedAt DateTime?
+  live_streamKey String?   
 
   @@index([userId])
   @@map("videos")

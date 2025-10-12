@@ -1,7 +1,7 @@
-import { spawn } from "child_process";
+import { spawn, ChildProcess } from "child_process";
 import path from "path";
 import fs from "fs";
-import fetch from "node-fetch"; 
+import fetch from "node-fetch";
 
 // const inputFile = "F:\\projects\\live_it\\apps\\worker\\dist\\07ac69bc-7798-4162-a267-90f0ab941048.mp4";
 // const streamKey = "z6xz-w1ch-874z-v32f-013s";
@@ -70,6 +70,13 @@ const s3 = new S3Client({
   },
 });
 
+interface StreamData {
+  ffmpegProcess: ChildProcess;
+  filePath: string;
+}
+
+const activeStreams = new Map<string, StreamData>();
+
 export async function downloadVideo(s3Key: string, outputDir = "/tmp") {
   if (!s3Key) throw new Error("❌ s3Key is required");
 
@@ -102,11 +109,12 @@ export async function downloadVideo(s3Key: string, outputDir = "/tmp") {
   return outputPath;
 }
 
+// const activeStreams = new Map<string, ChildProcess>();
 
 /**
  * Step 2: Start streaming to YouTube
  */
-export function startStreaming(streamKey: string, inputFile: string) {
+export function startStreaming(id: string, streamKey: string, inputFile: string) {
   console.log(`🎥 Starting FFmpeg stream from ${inputFile} ...`);
 
   ffmpegProcess = spawn("ffmpeg", [
@@ -127,6 +135,7 @@ export function startStreaming(streamKey: string, inputFile: string) {
   ]);
 
   // ffmpegProcess.stderr.on("data", data => console.log(data.toString()));
+  activeStreams.set(id, { ffmpegProcess, filePath: inputFile });
   ffmpegProcess.on("close", code => console.log(`FFmpeg exited with code ${code}`));
 }
 
@@ -142,16 +151,20 @@ function cleanupFile(filePath: string) {
   }
 }
 
-export async function killStreaming() {
-   if (!ffmpegProcess) return { status: "no active stream" };
+export async function killStreaming(id: string) {
+  try {
+    const streamCurrent = activeStreams.get(id);
+    if (streamCurrent) {
+      streamCurrent.ffmpegProcess.kill("SIGINT");
+      activeStreams.delete(id);
+      console.log(`Stream ${id} stopped`);
+    }
 
-    ffmpegProcess.kill("SIGINT");
-    ffmpegProcess = null;
-
-    // Clean up all temporary .mp4 files from /tmp
-    fs.readdirSync("/tmp").forEach(file => {
-      if (file.endsWith(".mp4")) cleanupFile(path.join("/tmp", file));
-    });
-    console.log("✅ Stream stopped and cleaned up.");
-    return { status: "stream stopped" };
+    setTimeout(() => {
+    cleanupFile(`${streamCurrent?.filePath}`);      
+    }, 5000);
+  } catch (error) {
+    console.error("Error stopping stream:", error);
+    throw error;
+  }
 }

@@ -1,11 +1,11 @@
 {
   "name": "@liveit/db",
   "version": "1.0.0",
-  "main": "src/client.ts",
-  "types": "src/client.ts",
+  "main": "dist/client.js",
+  "types": "dist/client.d.ts",
   "type": "module",
   "scripts": {
-    "build": "prisma generate",
+    "build": "tsc && prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev"
   },

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Library, Search, Download, Trash2, Eye, Clock, HardDrive, Filter } from "lucide-react"
+import { Library, Search, Download, Trash2, Eye, Clock, HardDrive, Filter, Square, Play } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useSession } from "next-auth/react"
 import { redirect } from "next/navigation"
@@ -30,9 +30,20 @@ export default function VideoLibraryPage() {
   const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("all")
-  
 
+  const [liveStreams, setLiveStreams] = useState<
+    Record<
+      string,
+      {
+        youtubeUrl: string
+        streamId: string
+        startedAt: string
+      }
+    >
+  >({})
   
+  const [loadingStreamId, setLoadingStreamId] = useState<string | null>(null)
+
 
   const [videos, setVideos] = useState<UploadedVideo[]>([])
 
@@ -87,10 +98,77 @@ export default function VideoLibraryPage() {
     })
   }
 
+  const handleStartStream = async (video: UploadedVideo) => {
+    try {
+      setLoadingStreamId(video.id)
+      const res = await fetch("/api/start-stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          streamId: video.id,
+          settings: {
+            camera: true,
+            microphone: true,
+            screenShare: false,
+            resolution: "1080p",
+            bitrate: 2500,
+          },
+          title: video.title,
+          description: `Streaming ${video.title}`,
+        }),
+      })
+      if (!res.ok) throw new Error("Failed to start stream")
+      const data = await res.json()
+      setLiveStreams((prev) => ({
+        ...prev,
+        [video.id]: {
+          youtubeUrl: data.youtubeUrl,
+          streamId: data.streamId,
+          startedAt: data.startedAt,
+        },
+      }))
+      toast({
+        title: "Stream started",
+        description: "You're live now. We generated a YouTube URL for your stream.",
+      })
+    } catch (e) {
+      toast({ title: "Unable to start stream", description: "Please try again.", variant: "destructive" as any })
+    } finally {
+      setLoadingStreamId(null)
+    }
+  }
+
+  const handleStopStream = async (video: UploadedVideo) => {
+    try {
+      setLoadingStreamId(video.id)
+      const res = await fetch("/api/stop-stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ streamId: liveStreams[video.id]?.streamId, reason: "manual_stop" }),
+      })
+      if (!res.ok) throw new Error("Failed to stop stream")
+      const data = await res.json()
+      // remove from live map
+      setLiveStreams((prev) => {
+        const next = { ...prev }
+        delete next[video.id]
+        return next
+      })
+      toast({
+        title: "Stream ended",
+        description: "We’ve generated a summary for your stream.",
+      })
+    } catch (e) {
+      toast({ title: "Unable to stop stream", description: "Please try again.", variant: "destructive" as any })
+    } finally {
+      setLoadingStreamId(null)
+    }
+  }
+
   const filteredVideos = videos.filter((video) => {
     const matchesSearch =
-      video.title.toLowerCase().includes(searchQuery.toLowerCase()) 
-      // ||      video.filename.toLowerCase().includes(searchQuery.toLowerCase())
+      video.title.toLowerCase().includes(searchQuery.toLowerCase())
+    // ||      video.filename.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesFilter = filterStatus === "all" || video.status === filterStatus
     return matchesSearch && matchesFilter
   })
@@ -101,11 +179,11 @@ export default function VideoLibraryPage() {
   const { data: session } = useSession();
 
   if (!session || !session.user?.id) {
-  return redirect("/signin");
-}
+    return redirect("/signin");
+  }
 
   const userId = session.user.id;
-    useEffect(() => {
+  useEffect(() => {
     const load = async () => {
       const result = await fetchVideos(userId);
       setVideos(result);
@@ -228,10 +306,17 @@ export default function VideoLibraryPage() {
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
-                          {formatDuration(video.duration)}
+                          {formatDuration(video.duration || 0)}
                         </div>
-                        <Badge variant="outline" className={`absolute top-2 right-2 ${getStatusColor(video.status)}`}>
-                          {video.status}
+                        <Badge
+                          variant="outline"
+                          className={`absolute top-2 right-2 ${
+                            liveStreams[video.id]
+                              ? "bg-red-500/15 text-red-500 border-red-500/20"
+                              : getStatusColor(video.status)
+                          }`}
+                        >
+                          {liveStreams[video.id] ? "LIVE" : video.status}
                         </Badge>
                       </div>
 
@@ -254,8 +339,45 @@ export default function VideoLibraryPage() {
                           {/* <span>{video.resolution}</span> */}
                           <span>{formatFileSize(video.fileSize)}</span>
                         </div>
+                          
+                          {liveStreams[video.id]?.youtubeUrl ? (
+                          <p className="text-xs">
+                            <a
+                              href={liveStreams[video.id].youtubeUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary underline"
+                            >
+                              View on YouTube
+                            </a>
+                          </p>
+                        ) : null}
 
                         <div className="flex items-center gap-2 pt-2">
+
+                           {liveStreams[video.id] ? (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleStopStream(video)}
+                              disabled={loadingStreamId === video.id}
+                              className="flex-1 hover-lift"
+                            >
+                              <Square className="h-4 w-4 mr-1" />
+                              {loadingStreamId === video.id ? "Stopping..." : "Stop Stream"}
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => handleStartStream(video)}
+                              disabled={video.status !== "streaming" || loadingStreamId === video.id}
+                              className="flex-1 hover-lift"
+                            >
+                              <Play className="h-4 w-4 mr-1" />
+                              {loadingStreamId === video.id ? "Starting..." : "Stream Now"}
+                            </Button>
+                          )}
+
                           <Button
                             variant="outline"
                             size="sm"

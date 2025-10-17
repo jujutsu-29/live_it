@@ -3,6 +3,10 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
+    "baseUrl": ".",
+  "paths": {
+    "@liveit/db": ["../../packages/db/src/index.ts"]
+  },
     "module": "NodeNext",
     "moduleResolution": "NodeNext"
   },

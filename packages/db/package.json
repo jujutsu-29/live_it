@@ -5,7 +5,7 @@
   "types": "dist/client.d.ts",
   "type": "module",
   "scripts": {
-    "build": "tsc && prisma generate",
+    "build": "prisma generate && tsc",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev"
   },

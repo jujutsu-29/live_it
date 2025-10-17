@@ -12,7 +12,7 @@
     "extends": "next/core-web-vitals"
   },
   "dependencies": {
-    "@liveit/db": "*",
+    "@liveit/db": "workspace:*",
     "@auth/prisma-adapter": "^2.10.0",
     "@aws-sdk/cloudfront-signer": "^3.893.0",
     "@aws-sdk/lib-storage": "^3.896.0",

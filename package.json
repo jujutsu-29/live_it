@@ -1,6 +1,7 @@
 {
   "name": "live_it_turbo",
   "private": true,
+  "packageManager": "pnpm@10.18.3",
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
@@ -19,7 +20,6 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "npm@10.9.3",
   "workspaces": [
     "apps/*",
     "packages/*"

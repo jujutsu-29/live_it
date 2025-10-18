@@ -7,20 +7,23 @@
   "scripts": {
     "dev": "tsc && node dist/index.js",
     "start": "node dist/index.js",
-    "build": "tsc"
+  "build": "tsc && tsc-alias"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+        "@liveit/db": "workspace:*",
     "@aws-sdk/client-s3": "^3.896.0",
     "@distube/ytdl-core": "^4.16.12",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "ytdlp-nodejs": "^2.3.4"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3"
+    "@types/express": "^5.0.3",
+    "tsc-alias": "^1.8.16"
   }
 }

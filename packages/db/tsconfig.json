@@ -8,7 +8,10 @@
     "strict": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "declaration": true,
+    "emitDeclarationOnly": false,
+    "declarationDir": "dist"
   },
   "ts-node": {
     "esm": true

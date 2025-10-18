@@ -117,22 +117,32 @@ export async function downloadVideo(s3Key: string, outputDir = "/tmp") {
 export function startStreaming(id: string, streamKey: string, inputFile: string) {
   console.log(`🎥 Starting FFmpeg stream from ${inputFile} ...`);
 
+  // ffmpegProcess = spawn("ffmpeg", [
+  //   "-re",
+  //   "-stream_loop", "-1", // ♾️ loop video
+  //   "-i", inputFile,
+  //   "-c:v", "libx264",
+  //   "-preset", "veryfast",
+  //   "-maxrate", "3000k",
+  //   "-bufsize", "6000k",
+  //   "-pix_fmt", "yuv420p",
+  //   "-g", "50",
+  //   "-c:a", "aac",
+  //   "-b:a", "160k",
+  //   "-ar", "44100",
+  //   "-f", "flv",
+  //   `rtmp://a.rtmp.youtube.com/live2/${streamKey}`,
+  // ]);
+
   ffmpegProcess = spawn("ffmpeg", [
-    "-re",
-    "-stream_loop", "-1", // ♾️ loop video
-    "-i", inputFile,
-    "-c:v", "libx264",
-    "-preset", "veryfast",
-    "-maxrate", "3000k",
-    "-bufsize", "6000k",
-    "-pix_fmt", "yuv420p",
-    "-g", "50",
-    "-c:a", "aac",
-    "-b:a", "160k",
-    "-ar", "44100",
-    "-f", "flv",
-    `rtmp://a.rtmp.youtube.com/live2/${streamKey}`,
-  ]);
+  "-re",                   // Read the input at its native frame rate (important for streaming)
+  "-stream_loop", "-1",    // Loop the video infinitely
+  "-i", inputFile,         // Your source video
+  "-c:v", "copy",          // ❗ Key Change: Copy the video stream directly
+  "-c:a", "copy",          // ❗ Key Change: Copy the audio stream directly
+  "-f", "flv",             // The container format YouTube expects
+  `rtmp://a.rtmp.youtube.com/live2/${streamKey}`,
+]);
 
   // ffmpegProcess.stderr.on("data", data => console.log(data.toString()));
   activeStreams.set(id, { ffmpegProcess, filePath: inputFile });

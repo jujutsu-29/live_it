@@ -12,6 +12,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Camera, MapPin, Calendar, Youtube, Twitter, Instagram, Edit3, Save, X } from "lucide-react"
+import { getUserStreamKey, updateProfile } from "@/lib/actions/user"
+import crypto from "crypto"
+import { decrypt } from "@/lib/actions/crypto"
 
 export default function ProfilePage() {
   const { data: session } = useSession()
@@ -19,21 +22,15 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState({
     name: "",
     email: "",
-    bio: "",
-    location: "",
-    website: "",
     joinDate: "",
     avatar: "/placeholder.svg",
+    streamKey: "",
+    youtubeUserName: "",
     stats: {
       totalStreams: 0,
       totalViewers: 0,
       followers: 0,
       hoursStreamed: 0,
-    },
-    socialLinks: {
-      youtube: "",
-      twitter: "",
-      instagram: "",
     },
   })
 
@@ -52,13 +49,35 @@ export default function ProfilePage() {
         avatar: session.user?.image || "/placeholder.svg",
       }))
     }
+
+    async function loadStreamKey() {
+      try {
+        const res = await getUserStreamKey(session?.user?.id || "");
+        // const key = res?.streamKey ?? "";
+        let key;
+
+        if(res?.streamKey) {
+          key = await decrypt(res.streamKey);
+        } else {
+          key = "";
+        }
+        setProfile((prev) => ({
+          ...prev,
+          streamKey: key,
+        }))
+      } catch (err) {
+        console.error("Failed to load stream key", err)
+      }
+    }
+
+    loadStreamKey()
   }, [session])
 
-  const handleSave = () => {
+  
+
+  const handleSave = async () => {
     setIsEditing(false)
-    // Send updated profile data (bio, social links, location, website) to backend
-    // Example:
-    // await fetch('/api/profile', { method: 'POST', body: JSON.stringify(profile) })
+    await updateProfile(profile, session?.user?.id || "");
   }
 
   return (
@@ -102,10 +121,10 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
+                      {/* <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
                         {profile.location}
-                      </div>
+                      </div> */}
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
                         Joined {profile.joinDate || "—"}
@@ -172,8 +191,9 @@ export default function ProfilePage() {
                     <Label htmlFor="email">Email</Label>
                     <Input id="email" type="email" value={profile.email} disabled />
                   </div>
-
-                  <div className="space-y-2">
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* <div className="space-y-2">
                     <Label htmlFor="bio">Bio</Label>
                     <Textarea
                       id="bio"
@@ -183,9 +203,24 @@ export default function ProfilePage() {
                       rows={4}
                       placeholder="Tell your audience about yourself..."
                     />
+                  </div> */}
+                  
+                  
+
+                  <div className="space-y-2">
+                    <Label htmlFor="streamKey">Stream Key</Label>
+                    <Textarea
+                      id="streamKey"
+                      value={profile.streamKey}
+                      onChange={(e) => setProfile({ ...profile, streamKey: e.target.value })}
+                      disabled={!isEditing}
+                      rows={4}
+                      placeholder="Tell your youTube stream key..."
+                    />
+                  </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="location">Location</Label>
                       <Input
@@ -207,7 +242,7 @@ export default function ProfilePage() {
                         placeholder="https://yourwebsite.com"
                       />
                     </div>
-                  </div>
+                  </div> */}
                 </CardContent>
               </Card>
 
@@ -225,11 +260,11 @@ export default function ProfilePage() {
                     </Label>
                     <Input
                       id="youtube"
-                      value={profile.socialLinks.youtube}
+                      value={profile.youtubeUserName}
                       onChange={(e) =>
                         setProfile({
                           ...profile,
-                          socialLinks: { ...profile.socialLinks, youtube: e.target.value },
+                          youtubeUserName: e.target.value,
                         })
                       }
                       disabled={!isEditing}
@@ -237,8 +272,8 @@ export default function ProfilePage() {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="twitter" className="flex items-center gap-2">
+                  {/* <div className="space-y-2"> */}
+                    {/* <Label htmlFor="twitter" className="flex items-center gap-2">
                       <Twitter className="h-4 w-4 text-blue-500" />
                       Twitter
                     </Label>
@@ -273,7 +308,7 @@ export default function ProfilePage() {
                       disabled={!isEditing}
                       placeholder="https://instagram.com/username"
                     />
-                  </div>
+                  </div> */}
                 </CardContent>
               </Card>
             </div>

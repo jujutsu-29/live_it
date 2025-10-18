@@ -2,12 +2,13 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Video, Calendar, Users, Zap, Shield, Clock } from "lucide-react"
+import { Navigation } from "@/components/navigation"
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card">
+      {/* <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Video className="h-8 w-8 text-primary" />
@@ -22,8 +23,10 @@ export default function LandingPage() {
             </Link>
           </div>
         </div>
-      </header>
+      </header> */}
 
+      <Navigation />
+      
       {/* Hero Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">

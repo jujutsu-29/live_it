@@ -26,6 +26,7 @@ model User {
   sessions      Session[]
   videos        Video[]
   streamKey     String?      @unique
+  youtubeUserName String?   @unique
 }
 
 model Account {

@@ -76,7 +76,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             "openid email profile" ,
             // https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly",
           access_type: "offline",
-          prompt: "consent",
         },
       },
 

@@ -161,18 +161,44 @@ function cleanupFile(filePath: string) {
   }
 }
 
+// export async function killStreaming(id: string) {
+//   try {
+//     const streamCurrent = activeStreams.get(id);
+//     if (streamCurrent) {
+//       streamCurrent.ffmpegProcess.kill("SIGINT");
+//       activeStreams.delete(id);
+//       console.log(`Stream ${id} stopped`);
+//     }
+
+//     setTimeout(() => {
+//     cleanupFile(`${streamCurrent?.filePath}`);      
+//     }, 5000);
+//   } catch (error) {
+//     console.error("Error stopping stream:", error);
+//     throw error;
+//   }
+// }
+
 export async function killStreaming(id: string) {
   try {
     const streamCurrent = activeStreams.get(id);
+
     if (streamCurrent) {
-      streamCurrent.ffmpegProcess.kill("SIGINT");
+      // 1. Use SIGKILL to force the process to stop
+      streamCurrent.ffmpegProcess.kill("SIGKILL");
       activeStreams.delete(id);
       console.log(`Stream ${id} stopped`);
+
+      // 2. Move the cleanup logic INSIDE the 'if' block
+      setTimeout(() => {
+        cleanupFile(streamCurrent.filePath); // No need for template literal or optional chaining now
+      }, 5000);
+
+    } else {
+      // Add a log for when no stream is found (optional, but good for debugging)
+      console.log(`Stream ${id} not found, it might be already stopped.`);
     }
 
-    setTimeout(() => {
-    cleanupFile(`${streamCurrent?.filePath}`);      
-    }, 5000);
   } catch (error) {
     console.error("Error stopping stream:", error);
     throw error;

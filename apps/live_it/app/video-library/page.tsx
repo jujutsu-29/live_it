@@ -126,7 +126,7 @@ export default function VideoLibraryPage() {
     try {
       setLoadingStreamId(video.id)
       const { data } = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/start-stream`,
+        `/api/worker/start-stream`,
         { id: video.id, streamKey: streamKey }
       )
       // const res = await fetch("/api/start-stream", {
@@ -162,7 +162,7 @@ export default function VideoLibraryPage() {
     try {
       setLoadingStreamId(video.id)
       const { data } = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/stop-stream`,
+        `/api/worker/stop-stream`,
         { id: video.id }
       )
       if (data.error) throw new Error("Failed to stop stream")

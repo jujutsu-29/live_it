@@ -24,7 +24,8 @@ model User {
   emailVerified DateTime? @default(now())
   accounts      Account[]
   sessions      Session[]
-  videos    Video[]
+  videos        Video[]
+  streamKey     String?      @unique
 }
 
 model Account {

@@ -79,7 +79,7 @@ export default function YouTubeLinksPage() {
 
     // console.log("hi there coming in", newLink);
     // const result = await axios.post('/api/download', { videoUrl: newLink.url });
-    const result = await axios.post('http://134.209.146.31:4000/process-job', { videoUrl: newLink.url, userId: user.id });
+    const result = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/process-job`, { videoUrl: newLink.url, userId: user.id });
     // console.log("Result from adding link:", result);
 
     const link: YouTubeLink = {

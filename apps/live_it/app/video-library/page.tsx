@@ -12,8 +12,9 @@ import { Library, Search, Download, Trash2, Eye, Clock, HardDrive, Filter, Squar
 import { useToast } from "@/hooks/use-toast"
 import { useSession } from "next-auth/react"
 import { redirect } from "next/navigation"
-import { db } from "@liveit/db"
 import { fetchVideos } from "@/lib/actions/videos"
+import axios from "axios"
+import { getUserStreamKey } from "@/lib/actions/user"
 
 interface UploadedVideo {
   title: string;
@@ -30,7 +31,7 @@ export default function VideoLibraryPage() {
   const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("all")
-
+  const [streamKey, setStreamKey] = useState<string | null>(null);
   const [liveStreams, setLiveStreams] = useState<
     Record<
       string,
@@ -41,11 +42,14 @@ export default function VideoLibraryPage() {
       }
     >
   >({})
-  
+
   const [loadingStreamId, setLoadingStreamId] = useState<string | null>(null)
 
 
   const [videos, setVideos] = useState<UploadedVideo[]>([])
+
+  const isAnyStreamLive = Object.keys(liveStreams).length > 0;
+
 
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
@@ -83,6 +87,26 @@ export default function VideoLibraryPage() {
     }
   }
 
+  const { data: session, status } = useSession()
+  const user = session?.user;
+  
+  
+ 
+  const userId = session?.user?.id;
+  
+  useEffect(() => {
+    if (!user?.id) return;
+    const loadKey = async () => {
+      try {
+        const res = await getUserStreamKey(user.id as string);
+        setStreamKey(res?.streamKey ?? null);
+      } catch (e) {
+        setStreamKey(null);
+      }
+    };
+    loadKey();
+  }, [user?.id]);
+
   const handleDeleteVideo = (id: string) => {
     setVideos(videos.filter((video) => video.id !== id))
     toast({
@@ -101,24 +125,13 @@ export default function VideoLibraryPage() {
   const handleStartStream = async (video: UploadedVideo) => {
     try {
       setLoadingStreamId(video.id)
-      const res = await fetch("/api/start-stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          streamId: video.id,
-          settings: {
-            camera: true,
-            microphone: true,
-            screenShare: false,
-            resolution: "1080p",
-            bitrate: 2500,
-          },
-          title: video.title,
-          description: `Streaming ${video.title}`,
-        }),
-      })
-      if (!res.ok) throw new Error("Failed to start stream")
-      const data = await res.json()
+      const { data } = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/start-stream`,
+        { id: video.id, streamKey: streamKey }
+      )
+      // const res = await fetch("/api/start-stream", {
+      //   method: "POST",
+      if (!data || data.error) throw new Error("Failed to start stream")
       setLiveStreams((prev) => ({
         ...prev,
         [video.id]: {
@@ -127,6 +140,13 @@ export default function VideoLibraryPage() {
           startedAt: data.startedAt,
         },
       }))
+
+      setVideos(prevVideos => 
+        prevVideos.map(v => 
+          v.id === video.id ? { ...v, status: "streaming" } : v
+        )
+      );
+
       toast({
         title: "Stream started",
         description: "You're live now. We generated a YouTube URL for your stream.",
@@ -141,19 +161,24 @@ export default function VideoLibraryPage() {
   const handleStopStream = async (video: UploadedVideo) => {
     try {
       setLoadingStreamId(video.id)
-      const res = await fetch("/api/stop-stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ streamId: liveStreams[video.id]?.streamId, reason: "manual_stop" }),
-      })
-      if (!res.ok) throw new Error("Failed to stop stream")
-      const data = await res.json()
+      const { data } = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/stop-stream`,
+        { id: video.id }
+      )
+      if (data.error) throw new Error("Failed to stop stream")
       // remove from live map
       setLiveStreams((prev) => {
         const next = { ...prev }
         delete next[video.id]
         return next
       })
+
+      setVideos(prevVideos => 
+        prevVideos.map(v => 
+          v.id === video.id ? { ...v, status: "stopped" } : v
+        )
+      );
+
       toast({
         title: "Stream ended",
         description: "We’ve generated a summary for your stream.",
@@ -173,23 +198,29 @@ export default function VideoLibraryPage() {
     return matchesSearch && matchesFilter
   })
 
-  const totalSize = videos.reduce((acc, video) => acc + video.fileSize, 0)
+  // const totalSize = videos.reduce((acc, video) => acc + video.fileSize, 0)
   // const totalViews = videos.reduce((acc, video) => acc + video.views, 0)
 
-  const { data: session } = useSession();
 
-  if (!session || !session.user?.id) {
-    return redirect("/signin");
-  }
-
-  const userId = session.user.id;
   useEffect(() => {
+    if (!userId) return;
     const load = async () => {
       const result = await fetchVideos(userId);
       setVideos(result);
     };
     load();
   }, [userId]);
+
+  // 3. ADD THIS LOADING CHECK
+  if (status === "loading") {
+    // You can replace this with a proper loading spinner
+    return <div>Loading session...</div>;
+  }
+  
+  // 4. NOW, your original check will work correctly
+  if (status === "unauthenticated" || !session || !user || !user.id) {
+    return redirect("/signin")
+  }
 
   return (
     <AuthGuard>
@@ -223,7 +254,7 @@ export default function VideoLibraryPage() {
                 <HardDrive className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatFileSize(totalSize)}</div>
+                {/* <div className="text-2xl font-bold">{formatFileSize(totalSize)}</div> */}
                 <p className="text-xs text-muted-foreground">Across all videos</p>
               </CardContent>
             </Card>
@@ -310,11 +341,10 @@ export default function VideoLibraryPage() {
                         </div>
                         <Badge
                           variant="outline"
-                          className={`absolute top-2 right-2 ${
-                            liveStreams[video.id]
+                          className={`absolute top-2 right-2 ${liveStreams[video.id]
                               ? "bg-red-500/15 text-red-500 border-red-500/20"
                               : getStatusColor(video.status)
-                          }`}
+                            }`}
                         >
                           {liveStreams[video.id] ? "LIVE" : video.status}
                         </Badge>
@@ -337,10 +367,10 @@ export default function VideoLibraryPage() {
 
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           {/* <span>{video.resolution}</span> */}
-                          <span>{formatFileSize(video.fileSize)}</span>
+                          {/* <span>{formatFileSize(video.fileSize)}</span> */}
                         </div>
-                          
-                          {liveStreams[video.id]?.youtubeUrl ? (
+
+                        {liveStreams[video.id]?.youtubeUrl ? (
                           <p className="text-xs">
                             <a
                               href={liveStreams[video.id].youtubeUrl}
@@ -355,7 +385,7 @@ export default function VideoLibraryPage() {
 
                         <div className="flex items-center gap-2 pt-2">
 
-                           {liveStreams[video.id] ? (
+                          {liveStreams[video.id] ? (
                             <Button
                               variant="destructive"
                               size="sm"
@@ -370,7 +400,12 @@ export default function VideoLibraryPage() {
                             <Button
                               size="sm"
                               onClick={() => handleStartStream(video)}
-                              disabled={video.status !== "streaming" || loadingStreamId === video.id}
+                              // disabled={video.status !== "streaming" || loadingStreamId === video.id}
+                              disabled={
+                        isAnyStreamLive ||         // Disable if any stream is live
+                        loadingStreamId !== null  // Disable if any request is loading
+                        // || video.status !== "active" // Disable if video is not "active" (ready)
+                      }
                               className="flex-1 hover-lift"
                             >
                               <Play className="h-4 w-4 mr-1" />
@@ -382,7 +417,7 @@ export default function VideoLibraryPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDownload(video)}
-                            disabled={video.status !== "active"}
+                            // disabled={video.status !== "active"}
                             className="flex-1 bg-transparent hover-lift"
                           >
                             <Download className="h-4 w-4 mr-1" />

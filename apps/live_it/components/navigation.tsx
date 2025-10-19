@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Video, Calendar, BarChart3, Settings, LogOut, User, Library, Link2, BadgeDollarSign, Menu } from "lucide-react"
+import { Video, Calendar, BarChart3, Settings, LogOut, User, Library, Link2, BadgeDollarSign, Menu, User2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,12 +19,13 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet"
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
-  { name: "Schedule", href: "/schedule", icon: Calendar },
-  { name: "Studio", href: "/studio", icon: Video },
-  { name: "Settings", href: "/settings", icon: Settings },
-  { name: "YouTube Links", href: "/youtube-links", icon: Link2 },
+  // { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
+  // { name: "Schedule", href: "/schedule", icon: Calendar },
+  // { name: "Studio", href: "/studio", icon: Video },
+  // { name: "Settings", href: "/settings", icon: Settings },
+  // { name: "YouTube Links", href: "/youtube-links", icon: Link2 },
   { name: "Video Library", href: "/video-library", icon: Library },
+  { name: "Profile", href: "/profile", icon: User2 },
   { name: "Pricing", href: "/pricing", icon: BadgeDollarSign },
 ]
 

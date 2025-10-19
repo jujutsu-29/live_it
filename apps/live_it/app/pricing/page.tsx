@@ -1,6 +1,7 @@
 import { CheckCircle, CheckCircle2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Navigation } from "@/components/navigation"
 
 const tiers = [
   {
@@ -45,8 +46,10 @@ const tiers = [
 ]
 
 export default function PricingPage() {
-  return (
+  return (<div>
+    <Navigation />
     <main className="container mx-auto px-6 py-10 animate-fade-in">
+
       <header className="mb-10 text-center">
         <h1 className="text-3xl md:text-4xl font-bold text-balance">Simple, transparent pricing</h1>
         <p className="mt-2 text-muted-foreground text-pretty">
@@ -111,5 +114,6 @@ export default function PricingPage() {
         </div>
       </section>
     </main>
+  </div>
   )
 }

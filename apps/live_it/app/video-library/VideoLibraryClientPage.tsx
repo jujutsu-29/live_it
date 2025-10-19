@@ -126,11 +126,13 @@ export default function VideoLibraryPage(s3Values: VideoLibraryClientProps) {
       } catch (e) {
         setStreamKey(null);
       }
+      finally {
+      setIsKeyLoading(false); 
+    }
     };
     if (session?.user?.id) {
       loadKey();
     }
-    setIsKeyLoading(false);
   }, [session]);
 
   const handleDeleteVideo = (id: string) => {
@@ -163,6 +165,12 @@ export default function VideoLibraryPage(s3Values: VideoLibraryClientProps) {
       // }
       const decryptedStreamKey = await decrypt(streamKey || "");
       console.log("decrypted stream key is this sarr ", decryptedStreamKey);
+
+      if (!streamKey) {
+      toast({ title: "Stream Key Missing", description: "Could not find your stream key. Please set it in your profile.", variant: "destructive" as any });
+      setLoadingStreamId(null);
+      return; 
+    }
       const { data } = await axios.post(
         `/api/worker/start-stream`,
         { id: video.id, streamKey: decryptedStreamKey }

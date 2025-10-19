@@ -125,7 +125,7 @@ export default function VideoLibraryPage(s3Values: VideoLibraryClientProps) {
         console.log("res coming from load key call ", res);
         let key = "";
         if(res?.streamKey) {
-          key = await decrypt(res.streamKey);
+          key = res.streamKey;
         }
         setStreamKey(key);
         console.log("value of key is this ", key);
@@ -182,7 +182,7 @@ export default function VideoLibraryPage(s3Values: VideoLibraryClientProps) {
     }
       const { data } = await axios.post(
         `/api/worker/start-stream`,
-        { id: video.id, streamKey: decryptedStreamKey }
+        { id: video.id, streamKey: streamKey }
       )
       // const { data } = await axios.post(
       //   `http://localhost:4000/start-stream`,

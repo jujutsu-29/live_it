@@ -158,10 +158,10 @@ export default function VideoLibraryPage(s3Values: VideoLibraryClientProps) {
       //   toast({ title: "Stream Key Missing", description: "Please set up your stream key in your profile settings.", variant: "destructive" as any })
       //   return router.push("/profile");
       // }
-      if (!streamKey) {
-        throw Error("No stream key found")
-      }
-      const decryptedStreamKey = await decrypt(streamKey);
+      // if (!streamKey) {
+      //   throw Error("No stream key found")
+      // }
+      const decryptedStreamKey = await decrypt(streamKey || "");
       console.log("decrypted stream key is this sarr ", decryptedStreamKey);
       const { data } = await axios.post(
         `/api/worker/start-stream`,

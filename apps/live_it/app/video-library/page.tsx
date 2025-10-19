@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import VideoLibraryClientPage from './VideoLibraryClientPage'; 
 // This Server Component reads server-only environment variables
 export default async function VideoLibraryPageWrapper() {

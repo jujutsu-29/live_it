@@ -143,16 +143,21 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
 
   const handleStartStream = async (video: UploadedVideo) => {
     try {
+      console.log("Stream start trying");
       setLoadingStreamId(video.id)
 
+      console.log("Current stream key:", streamKey);
       if(!streamKey) {
         toast({ title: "Stream Key Missing", description: "Please set up your stream key in your profile settings.", variant: "destructive" as any })
         return redirect("/profile");
       }
+
       const { data } = await axios.post(
         `/api/worker/start-stream`,
         { id: video.id, streamKey: streamKey }
       )
+
+      console.log("Start stream response data:", data);
       // const res = await fetch("/api/start-stream", {
       //   method: "POST",
       if (!data || data.error) throw new Error("Failed to start stream")
@@ -176,6 +181,7 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
         description: "You're live now. We generated a YouTube URL for your stream.",
       })
     } catch (e) {
+      console.log("error in representing stream ", e);
       toast({ title: "Unable to start stream", description: "Please try again.", variant: "destructive" as any })
     } finally {
       setLoadingStreamId(null)
@@ -184,11 +190,14 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
 
   const handleStopStream = async (video: UploadedVideo) => {
     try {
+      console.log("Stream stop trying");
       setLoadingStreamId(video.id)
       const { data } = await axios.post(
         `/api/worker/stop-stream`,
         { id: video.id }
       )
+
+      console.log("Stop stream response data:", data);
       if (data.error) throw new Error("Failed to stop stream")
       // remove from live map
       setLiveStreams((prev) => {
@@ -208,6 +217,7 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
         description: "We’ve generated a summary for your stream.",
       })
     } catch (e) {
+      console.log("Error in stopping stream ", e);  
       toast({ title: "Unable to stop stream", description: "Please try again.", variant: "destructive" as any })
     } finally {
       setLoadingStreamId(null)
@@ -263,7 +273,7 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
           <div className="mb-8 animate-slide-up flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">Video Library</h1>
-              <p className="text-muted-foreground">Manage all your uploaded videos stored on S3</p>
+              <p className="text-muted-foreground">Manage all your uploaded videos</p>
             </div>
             <Button onClick={() => setUploadDialogOpen(true)} className="hover-lift animate-scale-in">
               <Upload className="h-4 w-4 mr-2" />

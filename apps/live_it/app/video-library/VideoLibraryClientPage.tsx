@@ -11,12 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Library, Search, Download, Trash2, Eye, Clock, HardDrive, Filter, Square, Play, Upload } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useSession } from "next-auth/react"
-import { redirect } from "next/navigation"
+// import { redirect } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { fetchVideos } from "@/lib/actions/videos"
 import axios from "axios"
 import { getUserStreamKey } from "@/lib/actions/user"
 import { VideoUploadDialog } from "@/components/video-upload-dialog"
 import Image from "next/image"
+import { decrypt } from "@/lib/actions/crypto"
 
 interface UploadedVideo {
   title: string;
@@ -40,6 +42,7 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
   const [filterStatus, setFilterStatus] = useState<string>("all")
   const [streamKey, setStreamKey] = useState<string | null>(null)  
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const [isKeyLoading, setIsKeyLoading] = useState(true);
   const [liveStreams, setLiveStreams] = useState<
     Record<
       string,
@@ -50,7 +53,8 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
       }
     >
   >({})
-
+    
+  const router = useRouter()
   const [loadingStreamId, setLoadingStreamId] = useState<string | null>(null)
 
 
@@ -115,6 +119,7 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
   
   useEffect(() => {
     if (!user?.id) return;
+    setIsKeyLoading(true);
     const loadKey = async () => {
       try {
         const res = await getUserStreamKey(user.id as string);
@@ -124,7 +129,8 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
       }
     };
     loadKey();
-  }, [user?.id]);
+    setIsKeyLoading(false);
+  }, [session]);
 
   const handleDeleteVideo = (id: string) => {
     setVideos(videos.filter((video) => video.id !== id))
@@ -147,15 +153,23 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
       setLoadingStreamId(video.id)
 
       console.log("Current stream key:", streamKey);
-      if(!streamKey) {
-        toast({ title: "Stream Key Missing", description: "Please set up your stream key in your profile settings.", variant: "destructive" as any })
-        return redirect("/profile");
+      // if(!streamKey) {
+      //   toast({ title: "Stream Key Missing", description: "Please set up your stream key in your profile settings.", variant: "destructive" as any })
+      //   return router.push("/profile");
+      // }
+      if(!streamKey){
+        throw Error("No stream key found")
       }
-
+      const decryptedStreamKey = await decrypt(streamKey);
       const { data } = await axios.post(
         `/api/worker/start-stream`,
-        { id: video.id, streamKey: streamKey }
+        { id: video.id, streamKey: decryptedStreamKey }
       )
+      console.log("decrypted stream key is this sarr ", decryptedStreamKey);
+      // const { data } = await axios.post(
+      //   `http://localhost:4000/start-stream`,
+      //   { id: video.id, streamKey: decryptedStreamKey }
+      // )
 
       console.log("Start stream response data:", data);
       // const res = await fetch("/api/start-stream", {
@@ -178,7 +192,7 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
 
       toast({
         title: "Stream started",
-        description: "You're live now. We generated a YouTube URL for your stream.",
+        description: "You're live now.",
       })
     } catch (e) {
       console.log("error in representing stream ", e);
@@ -256,7 +270,7 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
   
   // 4. NOW, your original check will work correctly
   if (status === "unauthenticated" || !session || !user || !user.id) {
-    return redirect("/signin")
+    return router.push("/signin");
   }
 
   return (
@@ -455,6 +469,7 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
                               onClick={() => handleStartStream(video)}
                               // disabled={video.status !== "streaming" || loadingStreamId === video.id}
                               disabled={
+                                isKeyLoading ||
                         isAnyStreamLive ||         // Disable if any stream is live
                         loadingStreamId !== null  // Disable if any request is loading
                         // || video.status !== "active" // Disable if video is not "active" (ready)

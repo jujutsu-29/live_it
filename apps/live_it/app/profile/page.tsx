@@ -50,30 +50,31 @@ export default function ProfilePage() {
       }))
     }
 
-    async function loadStreamKey() {
+    async function loadStreamKey(userId: string) {
       try {
-        const res = await getUserStreamKey(session?.user?.id || "");
-        // const key = res?.streamKey ?? "";
-        let key;
+        // console.log("Loading stream key for user in profile:", userId);
+        const res = await getUserStreamKey(userId); // Call with the actual ID
 
+        let key = ""; // Default to empty string
         if(res?.streamKey) {
           key = await decrypt(res.streamKey);
-        } else {
-          key = "";
         }
+        
+        // console.log("Decrypted stream key:", key);
         setProfile((prev) => ({
           ...prev,
           streamKey: key,
-        }))
+        }));
       } catch (err) {
-        console.error("Failed to load stream key", err)
+        console.error("Failed to load stream key", err);
       }
     }
 
-    loadStreamKey()
+    if (session?.user?.id) {
+      loadStreamKey(session.user.id);
+    }
+    
   }, [session])
-
-  
 
   const handleSave = async () => {
     setIsEditing(false)

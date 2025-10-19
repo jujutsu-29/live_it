@@ -8,10 +8,20 @@
       "outputs": [
         "dist/**",
         ".next/**"
+      ],
+      "env": [
+        "AWS_S3_BUCKET",
+        "AWS_REGION",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "DATABASE_URL",
+        "DIRECT_URL",
+        "AUTH_SECRET",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "NEXTAUTH_URL",
+        "Authorized_redirect_URIs"
       ]
-    },
-    "@liveit/db#build": {
-      "outputs": []
     },
     "dev": {
       "dependsOn": [

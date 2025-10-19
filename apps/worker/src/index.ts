@@ -87,9 +87,13 @@ app.post("/delete-video", async (req, res) => {
 app.post("/start-stream", async (req, res) => {
   try {
     const {id, streamKey } = req.body;
-    if (!id || !streamKey)
+    if (!id || !streamKey){
       return res.status(400).json({ error: "Missing id or streamKey" });
+    }
 
+    // console.log("start streaming function called");
+    // console.log("Sr Stream Key is this ", streamKey)
+    // console.log("start streaming function 2 ");
     const video = await db.video.findUnique({ where: { id } });
     if (!video || !video.s3Key)
       return res.status(404).json({ error: "Video not found or not processed yet" });
@@ -100,6 +104,9 @@ app.post("/start-stream", async (req, res) => {
     const localPath = await downloadVideo(s3Key);
 
     // Step 2: Start streaming
+    // const decryptedStreamKey = decrypt(streamKey)
+    // startStreaming(id, decryptedStreamKey, localPath);
+    
     startStreaming(id, streamKey, localPath);
 
     await db.video.updateMany({

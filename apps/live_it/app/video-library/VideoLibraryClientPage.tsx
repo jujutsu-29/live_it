@@ -182,7 +182,7 @@ export default function VideoLibraryPage(s3Values: VideoLibraryClientProps) {
     }
       const { data } = await axios.post(
         `/api/worker/start-stream`,
-        { id: video.id, streamKey: streamKey }
+        { id: video.id, streamKey: decryptedStreamKey }
       )
       // const { data } = await axios.post(
       //   `http://localhost:4000/start-stream`,

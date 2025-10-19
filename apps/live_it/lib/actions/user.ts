@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { encrypt } from "./crypto";
 
 export const getUserStreamKey = async (userId: string) => {
+    console.log("get user stream key function ", userId);
     if(!userId) return null;
     return db.user.findUnique({
         where: { id: userId },

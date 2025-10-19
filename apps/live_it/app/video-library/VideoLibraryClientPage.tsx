@@ -117,21 +117,30 @@ export default function VideoLibraryPage(s3Values: VideoLibraryClientProps) {
   const userId = session?.user?.id;
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!userId) return;
     setIsKeyLoading(true);
     const loadKey = async () => {
       try {
-        const res = await getUserStreamKey(user.id as string);
-        setStreamKey(res?.streamKey ?? null);
+        const res = await getUserStreamKey(userId);
+        console.log("res coming from load key call ", res);
+        let key = "";
+        if(res?.streamKey) {
+          key = await decrypt(res.streamKey);
+        }
+        setStreamKey(key);
+        console.log("value of key is this ", key);
       } catch (e) {
+        console.log("error in loading key ", e);
         setStreamKey(null);
       }
       finally {
       setIsKeyLoading(false); 
     }
     };
-    if (session?.user?.id) {
+    if (userId) {
+      console.log("load key function called");
       loadKey();
+      console.log("load key function executed");
     }
   }, [session]);
 

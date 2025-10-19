@@ -18,6 +18,7 @@ import axios from "axios"
 import { getUserStreamKey } from "@/lib/actions/user"
 import { VideoUploadDialog } from "@/components/video-upload-dialog"
 import { decrypt } from "@/lib/actions/crypto"
+import Loading from "./loading"
 
 interface UploadedVideo {
   title: string;
@@ -279,10 +280,25 @@ export default function VideoLibraryPage(s3Values: VideoLibraryClientProps) {
     if (userId) load();
   }, [userId]);
 
-  // 3. ADD THIS LOADING CHECK
+  useEffect(() => {
+    const streamingVideo = videos.find(v => v.status === "streaming");
+
+    if (streamingVideo) {
+      setLiveStreams({
+        [streamingVideo.id]: {
+          youtubeUrl: "#", 
+          streamId: "active-on-load", 
+          startedAt: (streamingVideo as any).live_startedAt || new Date().toISOString()
+        }
+      });
+    } else {
+      setLiveStreams({});
+    }
+  }, [videos]);
+
   if (status === "loading") {
     // You can replace this with a proper loading spinner
-    return <div>Loading session...</div>;
+    return <div><Loading/></div>;
   }
 
   // 4. NOW, your original check will work correctly
@@ -454,7 +470,7 @@ export default function VideoLibraryPage(s3Values: VideoLibraryClientProps) {
                           {/* <span>{formatFileSize(video.fileSize)}</span> */}
                         </div>
 
-                        {liveStreams[video.id]?.youtubeUrl ? (
+                        {/* {liveStreams[video.id]?.youtubeUrl ? (
                           <p className="text-xs">
                             <a
                               href={liveStreams[video.id].youtubeUrl}
@@ -465,7 +481,7 @@ export default function VideoLibraryPage(s3Values: VideoLibraryClientProps) {
                               View on YouTube
                             </a>
                           </p>
-                        ) : null}
+                        ) : null} */}
 
                         <div className="flex items-center gap-2 pt-2">
 

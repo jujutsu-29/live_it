@@ -17,7 +17,6 @@ import { fetchVideos } from "@/lib/actions/videos"
 import axios from "axios"
 import { getUserStreamKey } from "@/lib/actions/user"
 import { VideoUploadDialog } from "@/components/video-upload-dialog"
-import Image from "next/image"
 import { decrypt } from "@/lib/actions/crypto"
 
 interface UploadedVideo {
@@ -36,11 +35,11 @@ interface VideoLibraryClientProps {
   s3Region: string;
 }
 
-export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
+export default function VideoLibraryPage(s3Values: VideoLibraryClientProps) {
   const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("all")
-  const [streamKey, setStreamKey] = useState<string | null>(null)  
+  const [streamKey, setStreamKey] = useState<string | null>(null)
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const [isKeyLoading, setIsKeyLoading] = useState(true);
   const [liveStreams, setLiveStreams] = useState<
@@ -53,7 +52,7 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
       }
     >
   >({})
-    
+
   const router = useRouter()
   const [loadingStreamId, setLoadingStreamId] = useState<string | null>(null)
 
@@ -91,7 +90,7 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
     return `${mb.toFixed(2)} MB`
   }
 
-  
+
 
   const getStatusColor = (status: UploadedVideo["status"]) => {
     switch (status) {
@@ -112,11 +111,11 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
 
   const { data: session, status } = useSession()
   const user = session?.user;
-  
-  
- 
+
+
+
   const userId = session?.user?.id;
-  
+
   useEffect(() => {
     if (!user?.id) return;
     setIsKeyLoading(true);
@@ -128,7 +127,9 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
         setStreamKey(null);
       }
     };
-    loadKey();
+    if (session?.user?.id) {
+      loadKey();
+    }
     setIsKeyLoading(false);
   }, [session]);
 
@@ -157,15 +158,15 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
       //   toast({ title: "Stream Key Missing", description: "Please set up your stream key in your profile settings.", variant: "destructive" as any })
       //   return router.push("/profile");
       // }
-      if(!streamKey){
+      if (!streamKey) {
         throw Error("No stream key found")
       }
       const decryptedStreamKey = await decrypt(streamKey);
+      console.log("decrypted stream key is this sarr ", decryptedStreamKey);
       const { data } = await axios.post(
         `/api/worker/start-stream`,
         { id: video.id, streamKey: decryptedStreamKey }
       )
-      console.log("decrypted stream key is this sarr ", decryptedStreamKey);
       // const { data } = await axios.post(
       //   `http://localhost:4000/start-stream`,
       //   { id: video.id, streamKey: decryptedStreamKey }
@@ -184,8 +185,8 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
         },
       }))
 
-      setVideos(prevVideos => 
-        prevVideos.map(v => 
+      setVideos(prevVideos =>
+        prevVideos.map(v =>
           v.id === video.id ? { ...v, status: "streaming" } : v
         )
       );
@@ -220,8 +221,8 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
         return next
       })
 
-      setVideos(prevVideos => 
-        prevVideos.map(v => 
+      setVideos(prevVideos =>
+        prevVideos.map(v =>
           v.id === video.id ? { ...v, status: "stopped" } : v
         )
       );
@@ -231,7 +232,7 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
         description: "We’ve generated a summary for your stream.",
       })
     } catch (e) {
-      console.log("Error in stopping stream ", e);  
+      console.log("Error in stopping stream ", e);
       toast({ title: "Unable to stop stream", description: "Please try again.", variant: "destructive" as any })
     } finally {
       setLoadingStreamId(null)
@@ -254,12 +255,11 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
 
 
   useEffect(() => {
-    if (!userId) return;
     const load = async () => {
-      const result = await fetchVideos(userId);
+      const result = await fetchVideos(userId || "");
       setVideos(result);
     };
-    load();
+    if (userId) load();
   }, [userId]);
 
   // 3. ADD THIS LOADING CHECK
@@ -267,7 +267,7 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
     // You can replace this with a proper loading spinner
     return <div>Loading session...</div>;
   }
-  
+
   // 4. NOW, your original check will work correctly
   if (status === "unauthenticated" || !session || !user || !user.id) {
     return router.push("/signin");
@@ -396,21 +396,21 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
                         <img
                           // src={`{https://${s3BucketName.s3BucketName}.s3.${s3BucketName.s3Region}.amazonaws.com/uploads/${userId}/${video.thumbnail}` || "/placeholder.svg"}
                           src={
-    video.thumbnail && s3Values.s3BucketName && s3Values.s3Region
-      ? `https://${s3Values.s3BucketName}.s3.${s3Values.s3Region}.amazonaws.com/${video.thumbnail}` // Just use video.thumbnail
-      : "/placeholder.svg" // Fallback if thumbnail is missing
-  }
+                            video.thumbnail && s3Values.s3BucketName && s3Values.s3Region
+                              ? `https://${s3Values.s3BucketName}.s3.${s3Values.s3Region}.amazonaws.com/${video.thumbnail}` // Just use video.thumbnail
+                              : "/placeholder.svg" // Fallback if thumbnail is missing
+                          }
                           alt={video.title}
                           className="w-full h-full object-cover"
-                        /> 
+                        />
                         <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
                           {formatDuration(video.duration || 0)}
                         </div>
                         <Badge
                           variant="outline"
                           className={`absolute top-2 right-2 ${liveStreams[video.id]
-                              ? "bg-red-500/15 text-red-500 border-red-500/20"
-                              : getStatusColor(video.status)
+                            ? "bg-red-500/15 text-red-500 border-red-500/20"
+                            : getStatusColor(video.status)
                             }`}
                         >
                           {liveStreams[video.id] ? "LIVE" : video.status}
@@ -470,10 +470,10 @@ export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
                               // disabled={video.status !== "streaming" || loadingStreamId === video.id}
                               disabled={
                                 isKeyLoading ||
-                        isAnyStreamLive ||         // Disable if any stream is live
-                        loadingStreamId !== null  // Disable if any request is loading
-                        // || video.status !== "active" // Disable if video is not "active" (ready)
-                      }
+                                isAnyStreamLive ||         // Disable if any stream is live
+                                loadingStreamId !== null  // Disable if any request is loading
+                                // || video.status !== "active" // Disable if video is not "active" (ready)
+                              }
                               className="flex-1 hover-lift"
                             >
                               <Play className="h-4 w-4 mr-1" />

@@ -29,7 +29,12 @@ interface UploadedVideo {
   duration: number | null;
 }
 
-export default function VideoLibraryPage(s3Values : any) {
+interface VideoLibraryClientProps {
+  s3BucketName: string;
+  s3Region: string;
+}
+
+export default function VideoLibraryPage(s3Values : VideoLibraryClientProps) {
   const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("all")
@@ -139,6 +144,11 @@ export default function VideoLibraryPage(s3Values : any) {
   const handleStartStream = async (video: UploadedVideo) => {
     try {
       setLoadingStreamId(video.id)
+
+      if(!streamKey) {
+        toast({ title: "Stream Key Missing", description: "Please set up your stream key in your profile settings.", variant: "destructive" as any })
+        return redirect("/profile");
+      }
       const { data } = await axios.post(
         `/api/worker/start-stream`,
         { id: video.id, streamKey: streamKey }

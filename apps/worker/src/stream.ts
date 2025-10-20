@@ -77,12 +77,56 @@ interface StreamData {
 
 const activeStreams = new Map<string, StreamData>();
 
-export async function downloadVideo(s3Key: string, outputDir = "/tmp") {
+// export async function downloadVideo(s3Key: string, outputDir = "/tmp") {
+//   if (!s3Key) throw new Error("❌ s3Key is required");
+
+//   const bucket = process.env.AWS_S3_BUCKET!;
+//   const region = process.env.AWS_REGION!;
+
+//   console.log(`🌍 S3 Bucket: ${bucket}, Region: ${region}`);
+
+//   if (!fs.existsSync(outputDir)) {
+//     fs.mkdirSync(outputDir, { recursive: true });
+//   }
+
+//   const fileName = path.basename(s3Key);
+//   const outputPath = path.join(outputDir, fileName);
+
+//   // 🧠 Generate presigned URL (valid 1 hour)
+//   const command = new GetObjectCommand({ Bucket: bucket, Key: s3Key });
+//   const s3Url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+
+//   console.log(`⬇️ Downloading from S3: ${s3Url}`);
+
+//   // 🧱 Stream the response and write to file
+//   const response = await fetch(s3Url);
+//   if (!response.ok) {
+//     throw new Error(`Failed to download video: ${response.statusText}`);
+//   }
+
+//   const arrayBuffer = await response.arrayBuffer();
+//   fs.writeFileSync(outputPath, Buffer.from(arrayBuffer));
+
+//   console.log(`✅ Downloaded video to ${outputPath}`);
+//   return outputPath;
+// }
+
+import { Writable } from 'stream'; // Import Writable for type checking
+import { pipeline } from 'stream/promises'; // Import pipeline for efficient streaming
+
+// Assume 's3' client is initialized elsewhere
+// const s3 = new S3Client({ region: process.env.AWS_REGION! });
+
+export async function downloadVideo(s3Key: string, outputDir = "/tmp"): Promise<string> {
   if (!s3Key) throw new Error("❌ s3Key is required");
 
   const bucket = process.env.AWS_S3_BUCKET!;
   const region = process.env.AWS_REGION!;
 
+  // Basic check for environment variables
+  if (!bucket || !region) {
+    throw new Error("❌ AWS S3 Bucket or Region environment variable is not set.");
+  }
   console.log(`🌍 S3 Bucket: ${bucket}, Region: ${region}`);
 
   if (!fs.existsSync(outputDir)) {
@@ -92,23 +136,57 @@ export async function downloadVideo(s3Key: string, outputDir = "/tmp") {
   const fileName = path.basename(s3Key);
   const outputPath = path.join(outputDir, fileName);
 
-  // 🧠 Generate presigned URL (valid 1 hour)
+  // Optional: Clean up existing file if present
+  if (fs.existsSync(outputPath)) {
+    console.warn(`⚠️ Deleting existing file at ${outputPath}`);
+    try {
+      fs.unlinkSync(outputPath);
+    } catch (unlinkErr) {
+      console.error(`Error deleting existing file: ${unlinkErr}`);
+      // Decide if this is a fatal error or if you can continue
+    }
+  }
+
+  // Generate presigned URL (valid 1 hour)
   const command = new GetObjectCommand({ Bucket: bucket, Key: s3Key });
   const s3Url = await getSignedUrl(s3, command, { expiresIn: 3600 });
 
   console.log(`⬇️ Downloading from S3: ${s3Url}`);
 
-  // 🧱 Stream the response and write to file
+  // Fetch the video
   const response = await fetch(s3Url);
   if (!response.ok) {
-    throw new Error(`Failed to download video: ${response.statusText}`);
+    throw new Error(`Failed to download video: ${response.status} ${response.statusText}`);
+  }
+  if (!response.body) {
+    throw new Error("❌ Response body is null, cannot download.");
   }
 
-  const arrayBuffer = await response.arrayBuffer();
-  fs.writeFileSync(outputPath, Buffer.from(arrayBuffer));
+  // --- Stream the download directly to the file ---
+  const fileStream = fs.createWriteStream(outputPath);
 
-  console.log(`✅ Downloaded video to ${outputPath}`);
-  return outputPath;
+  try {
+    // Pipe the response body (ReadableStream) into the file stream (Writable)
+    // Ensure response.body is compatible with Node.js Writable stream
+    // @ts-ignore - Node's fetch response.body should be pipeable to fs.createWriteStream
+    await pipeline(response.body, fileStream);
+
+    console.log(`✅ Downloaded video to ${outputPath}`);
+    return outputPath;
+  } catch (streamError) {
+    console.error("❌ Error during file stream write:", streamError);
+    // Attempt to clean up the partial file on error
+    try {
+      if (fs.existsSync(outputPath)) {
+        fs.unlinkSync(outputPath);
+        console.log(`🧹 Cleaned up partial file: ${outputPath}`);
+      }
+    } catch (cleanupErr) {
+      console.error(`Error cleaning up partial file: ${cleanupErr}`);
+    }
+    // Re-throw the error to indicate download failure
+    throw new Error(`Failed to write video to disk: ${streamError}`);
+  }
 }
 
 // const activeStreams = new Map<string, ChildProcess>();

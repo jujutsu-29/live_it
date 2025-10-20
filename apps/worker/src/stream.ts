@@ -83,6 +83,8 @@ export async function downloadVideo(s3Key: string, outputDir = "/tmp") {
   const bucket = process.env.AWS_S3_BUCKET!;
   const region = process.env.AWS_REGION!;
 
+  console.log(`🌍 S3 Bucket: ${bucket}, Region: ${region}`);
+
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }

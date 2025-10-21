@@ -2,6 +2,7 @@ import { spawn, ChildProcess } from "child_process";
 import path from "path";
 import fs from "fs";
 import fetch from "node-fetch";
+import os from 'os';
 
 // const inputFile = "F:\\projects\\live_it\\apps\\worker\\dist\\07ac69bc-7798-4162-a267-90f0ab941048.mp4";
 // const streamKey = "z6xz-w1ch-874z-v32f-013s";
@@ -117,7 +118,10 @@ import { pipeline } from 'stream/promises'; // Import pipeline for efficient str
 // Assume 's3' client is initialized elsewhere
 // const s3 = new S3Client({ region: process.env.AWS_REGION! });
 
-export async function downloadVideo(s3Key: string, outputDir = "/tmp"): Promise<string> {
+const homeDir = os.homedir() || '/root'; // Get home directory or default to /root
+const defaultDownloadDir = path.join(homeDir, 'video_downloads');
+
+export async function downloadVideo(s3Key: string, outputDir = defaultDownloadDir): Promise<string> {
   if (!s3Key) throw new Error("❌ s3Key is required");
 
   const bucket = process.env.AWS_S3_BUCKET!;
@@ -207,9 +211,9 @@ export function startStreaming(id: string, streamKey: string, inputFile: string)
     `rtmp://a.rtmp.youtube.com/live2/${streamKey}`,
   ]);
 
-  // ffmpegProcess?.stderr?.on('data', (data) => {
-  //   console.error(`FFmpeg stderr: ${data.toString()}`);
-  // });
+  ffmpegProcess?.stderr?.on('data', (data) => {
+    console.error(`FFmpeg stderr: ${data.toString()}`);
+  });
 
   // ffmpegProcess.stderr.on("data", data => console.log(data.toString()));
   activeStreams.set(id, { ffmpegProcess, filePath: inputFile });
@@ -217,8 +221,8 @@ export function startStreaming(id: string, streamKey: string, inputFile: string)
   ffmpegProcess.on('error', (err) => {
     console.error('Failed to start FFmpeg process:', err);
   });
-  
-  ffmpegProcess.on("close", code => console.log(`FFmpeg exited with code ${code}`));
+
+  ffmpegProcess.on("close", code => console.log(`FFmpeg id- ${id} exited with code ${code}`));
 }
 
 /**
@@ -243,7 +247,7 @@ function cleanupFile(filePath: string) {
 //     }
 
 //     setTimeout(() => {
-//     cleanupFile(`${streamCurrent?.filePath}`);      
+//     cleanupFile(`${streamCurrent?.filePath}`);
 //     }, 5000);
 //   } catch (error) {
 //     console.error("Error stopping stream:", error);

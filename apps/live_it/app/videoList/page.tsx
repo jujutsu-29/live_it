@@ -1,4 +1,3 @@
-// apps/dashboard/app/videos/[userId].tsx
 "use client";
 import { useEffect, useState } from "react";
 

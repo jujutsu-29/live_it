@@ -14,7 +14,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   // console.log("AuthGuard session:", session)
 
-  // While checking session
   if (status === "loading") {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -29,6 +28,5 @@ export function AuthGuard({ children }: AuthGuardProps) {
     return null
   }
 
-  // If session exists, render children
   return <>{children}</>
 }

@@ -358,7 +358,7 @@ export default function StudioPage() {
   try {
     // Open your NextAuth OAuth flow for YouTube
     const popup = window.open(
-      "/api/auth/signin/google?callbackUrl=/dashboard", // NextAuth signin endpoint for Google
+      "/api/auth/signin/google?callbackUrl=/video-library", // NextAuth signin endpoint for Google
       "_blank",
       "width=500,height=600"
     )

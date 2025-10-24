@@ -24,9 +24,9 @@ export default function SignInPage() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
     try {
-      const result = await signIn("google",  { redirectTo: "/dashboard" });
+      const result = await signIn("google",  { redirectTo: "/video-library" });
       console.log(result);
-      router.push("/dashboard")
+      router.push("/video-library")
     } catch (error) {
       console.log("error in auth", error);
       toast({

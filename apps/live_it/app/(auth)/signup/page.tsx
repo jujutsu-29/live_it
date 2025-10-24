@@ -32,51 +32,6 @@ export default function SignUpPage() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleEmailSignUp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    try {
-      // Validation
-      if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
-        throw new Error("Please fill in all fields")
-      }
-
-      if (formData.password !== formData.confirmPassword) {
-        throw new Error("Passwords do not match")
-      }
-
-      if (formData.password.length < 8) {
-        throw new Error("Password must be at least 8 characters long")
-      }
-
-      if (!formData.agreeToTerms) {
-        throw new Error("Please agree to the terms and conditions")
-      }
-
-      // Mock registration - replace with real auth
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      localStorage.setItem("auth_token", "mock_token_" + Date.now())
-      localStorage.setItem("user_email", formData.email)
-      localStorage.setItem("user_name", formData.name)
-
-      toast({
-        title: "Account created!",
-        description: "Welcome to StreamLive. Your account has been created successfully.",
-      })
-      router.push("/dashboard")
-    } catch (error) {
-      toast({
-        title: "Sign up failed",
-        description: error instanceof Error ? error.message : "Please check your information and try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const handleGoogleSignUp = async () => {
     setIsLoading(true)
     try {
@@ -89,7 +44,7 @@ export default function SignUpPage() {
         title: "Welcome to StreamLive!",
         description: "Your account has been created with Google.",
       })
-      router.push("/dashboard")
+      router.push("/video-library")
     } catch (error) {
       toast({
         title: "OAuth failed",

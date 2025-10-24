@@ -105,43 +105,43 @@ export async function downloadVideo(s3Key: string, outputDir = defaultDownloadDi
 export function startStreaming(id: string, streamKey: string, inputFile: string) {
   console.log(`🎥 Starting FFmpeg stream from ${inputFile} ...`);
 
-  // ffmpegProcess = spawn("ffmpeg", [
-  //   "-re",                   // Read the input at its native frame rate (important for streaming)
-  //   "-stream_loop", "-1",    // Loop the video infinitely
-  //   "-i", inputFile,         // Your source video
-  //   "-c:v", "copy",          // ❗ Key Change: Copy the video stream directly
-  //   "-c:a", "copy",          // ❗ Key Change: Copy the audio stream directly
-  //   "-f", "flv",             // The container format YouTube expects
-  //   `rtmp://a.rtmp.youtube.com/live2/${streamKey}`,
-  // ]);
-
-  const ffmpegArgs = [
-    "-re",                   // Read input at native frame rate
+  ffmpegProcess = spawn("ffmpeg", [
+    "-re",                   // Read the input at its native frame rate (important for streaming)
     "-stream_loop", "-1",    // Loop the video infinitely
-    "-i", inputFile,         // Input file
+    "-i", inputFile,         // Your source video
+    "-c:v", "copy",          // ❗ Key Change: Copy the video stream directly
+    "-c:a", "copy",          // ❗ Key Change: Copy the audio stream directly
+    "-f", "flv",             // The container format YouTube expects
+    `rtmp://a.rtmp.youtube.com/live2/${streamKey}`,
+  ]);
 
-    // --- Video Re-encoding, Scaling & Bitrate Control ---
-    "-c:v", "libx264",       // Re-encode video using H.264
-    "-preset", "veryfast",   // Faster encoding preset (lower quality, less CPU)
-    "-vf", "scale=2560:1440", // Scale video filter to 2560x1440
-    "-b:v", "6000k",         // Target video bitrate (6000 Kbps = 6 Mbps)
-    "-maxrate", "6800k",     // **Set max bitrate to YouTube's recommendation**
-    "-bufsize", "12000k",    // Buffer size (often ~2x bitrate)
-    "-pix_fmt", "yuv420p",   // Standard pixel format
-    "-g", "50",              // Keyframe interval (~2 seconds for 25/30fps)
+  // const ffmpegArgs = [
+  //   "-re",                   // Read input at native frame rate
+  //   "-stream_loop", "-1",    // Loop the video infinitely
+  //   "-i", inputFile,         // Input file
 
-    // --- Audio ---
-    "-c:a", "copy",          // Try copying audio first (saves CPU)
-    // If audio copy fails, re-encode:
-    // "-c:a", "aac",
-    // "-b:a", "128k",
+  //   // --- Video Re-encoding, Scaling & Bitrate Control ---
+  //   "-c:v", "libx264",       // Re-encode video using H.264
+  //   "-preset", "veryfast",   // Faster encoding preset (lower quality, less CPU)
+  //   "-vf", "scale=2560:1440", // Scale video filter to 2560x1440
+  //   "-b:v", "6000k",         // Target video bitrate (6000 Kbps = 6 Mbps)
+  //   "-maxrate", "6800k",     // **Set max bitrate to YouTube's recommendation**
+  //   "-bufsize", "12000k",    // Buffer size (often ~2x bitrate)
+  //   "-pix_fmt", "yuv420p",   // Standard pixel format
+  //   "-g", "50",              // Keyframe interval (~2 seconds for 25/30fps)
 
-    // --- Output ---
-    "-f", "flv",             // Output format for RTMP
-    `rtmp://a.rtmp.youtube.com/live2/${streamKey}`, // YouTube ingest URL
-  ];
+  //   // --- Audio ---
+  //   "-c:a", "copy",          // Try copying audio first (saves CPU)
+  //   // If audio copy fails, re-encode:
+  //   // "-c:a", "aac",
+  //   // "-b:a", "128k",
 
-  const ffmpegProcess = spawn("ffmpeg", ffmpegArgs);
+  //   // --- Output ---
+  //   "-f", "flv",             // Output format for RTMP
+  //   `rtmp://a.rtmp.youtube.com/live2/${streamKey}`, // YouTube ingest URL
+  // ];
+
+  // const ffmpegProcess = spawn("ffmpeg", ffmpegArgs);
 
   ffmpegProcess?.stderr?.on('data', (data) => {
     console.error(`FFmpeg stderr: ${data.toString()}`);

@@ -123,15 +123,15 @@ export default function VideoLibraryPage(s3Values: VideoLibraryClientProps) {
     const loadKey = async () => {
       try {
         const res = await getUserStreamKey(userId);
-        console.log("res coming from load key call ", res);
+        // console.log("res coming from load key call ", res);
         let key = "";
         if(res?.streamKey) {
           key = res.streamKey;
         }
         setStreamKey(key);
-        console.log("value of key is this ", key);
+        // console.log("value of key is this ", key);
       } catch (e) {
-        console.log("error in loading key ", e);
+        // console.log("error in loading key ", e);
         setStreamKey(null);
       }
       finally {
@@ -139,13 +139,15 @@ export default function VideoLibraryPage(s3Values: VideoLibraryClientProps) {
     }
     };
     if (userId) {
-      console.log("load key function called");
+      // console.log("load key function called");
       loadKey();
-      console.log("load key function executed");
+      // console.log("load key function executed");
     }
   }, [session]);
 
-  const handleDeleteVideo = (id: string) => {
+  const handleDeleteVideo = async (id: string) => {
+    const res = await axios.post("/api/worker/delete-video", { id });
+    console.log("Delete video response:", res.data);
     setVideos(videos.filter((video) => video.id !== id))
     toast({
       title: "Video Deleted",

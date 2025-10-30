@@ -22,40 +22,6 @@ app.listen(PORT, () => {
   console.log(`Worker listening on port ${PORT}`);
 });
 
-// app.post("/process-job", async (req, res) => {
-//   // console.log("Received job:", req);
-//   // console.log("Received job:", req.body);
-//   const { userId, videoUrl } = req.body;
-
-//   try {
-//     const videoData = await getVideoMetadata(videoUrl);
-
-//     const video = await db.video.create({
-//       data: {
-//         userId: userId,
-//         url: videoUrl,
-//         title: videoData.title,
-//         thumbnail: videoData.thumbnailUrl,
-//         duration: videoData.duration
-//       },
-//     });
-
-//     //no await here video download and upload will happen on background, we dont want to keep user waiting
-//     // processJob(videoUrl, video.id);
-
-//     setImmediate(() => {
-//       processJob(videoUrl, video.id).catch(err => {
-//         console.error(`Background job failed for ${video.id}:`, err);
-//       });
-//     });
-//     return res.status(200).json({ message: "Job processing Done", data: video });
-//   } catch (err) {
-//     console.error("Error processing job:", err);
-//     return res.status(500).send("Error processing job");
-//   }
-
-// })
-
 app.post("/delete-video", async (req, res) => {
   // console.log("Delete request is ", req);
   const id = req.body.id;
@@ -85,42 +51,6 @@ app.post("/delete-video", async (req, res) => {
   }
 })
 
-// app.post("/start-stream", async (req, res) => {
-//   try {
-//     const {id, streamKey } = req.body;
-//     if (!id || !streamKey){
-//       return res.status(400).json({ error: "Missing id or streamKey" });
-//     }
-
-//     // console.log("start streaming function called");
-//     // console.log("Sr Stream Key is this ", streamKey)
-//     // console.log("start streaming function 2 ");
-//     const video = await db.video.findUnique({ where: { id } });
-//     if (!video || !video.s3Key)
-//       return res.status(404).json({ error: "Video not found or not processed yet" });
-//     const s3Key = video.s3Key;
-
-//     console.log(`🚀 Starting stream for video ID: ${id}, S3 Key: ${s3Key}`);
-//     // Step 1: Download video
-//     const localPath = await downloadVideo(s3Key);
-
-//     // Step 2: Start streaming
-//     // const decryptedStreamKey = decrypt(streamKey)
-//     // startStreaming(id, decryptedStreamKey, localPath);
-    
-//     startStreaming(id, streamKey, localPath);
-
-//     await db.video.updateMany({
-//       where: { id: id },
-//       data: { status: 'streaming', live_startedAt: new Date() },
-//     });
-
-//     return res.json({ status: "streaming started", localPath });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ error: (error as Error).message });
-//   }
-// });
 
 interface StreamJob {
   id: string;        // Video ID

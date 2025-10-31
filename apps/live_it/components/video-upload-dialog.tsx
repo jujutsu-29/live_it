@@ -166,18 +166,20 @@ export function VideoUploadDialog({ open, onOpenChange, onUploadSuccess, userId 
       return
     }
 
+    const titleForToast = videoTitle;
+
     setIsUploading(true);
     setUploadProgress(0);
 
     let generatedThumbnail: Blob | null = null;
     let thumbnailS3Key: string | null = null;
 
-    console.log("Generating thumbnail...");
+    // console.log("Generating thumbnail...");
     try {
       generatedThumbnail = await generateThumbnail(selectedFile, 1); // Get frame at 1 second
-      console.log("✅ Thumbnail generated");
+      // console.log("✅ Thumbnail generated");
     } catch (thumbError) {
-      console.error("Thumbnail generation failed:", thumbError);
+      // console.error("Thumbnail generation failed:", thumbError);
       toast({ title: "Warning", description: "Could not generate thumbnail, proceeding without it." });
       // Don't stop the upload, just proceed without a thumbnail
     }
@@ -185,7 +187,7 @@ export function VideoUploadDialog({ open, onOpenChange, onUploadSuccess, userId 
     // --- 2. Get Pre-Signed URL(s) ---
     // a) For Thumbnail (if generated)
     if (generatedThumbnail) {
-      console.log("Getting thumbnail upload URL...");
+      // console.log("Getting thumbnail upload URL...");
       const thumbFormDataUrl = new FormData();
       // Create a filename for the thumbnail (e.g., using video name + .jpg)
       const thumbFileName = selectedFile.name.replace(/\.[^/.]+$/, "") + ".jpg";
@@ -196,16 +198,16 @@ export function VideoUploadDialog({ open, onOpenChange, onUploadSuccess, userId 
       if (!thumbUrlResponse.success || !thumbUrlResponse.url || !thumbUrlResponse.key) {
         throw new Error(thumbUrlResponse.error || "Failed to get thumbnail upload URL.");
       }
-      console.log("✅ Got thumbnail upload URL");
+      // console.log("✅ Got thumbnail upload URL");
 
       // --- 3. Upload Thumbnail Directly to S3 ---
-      console.log("Uploading thumbnail...");
+      // console.log("Uploading thumbnail...");
       await fetch(thumbUrlResponse.url, {
         method: "PUT",
         headers: { "Content-Type": "image/jpeg" },
         body: generatedThumbnail,
       });
-      console.log("✅ Thumbnail uploaded");
+      // console.log("✅ Thumbnail uploaded");
       thumbnailS3Key = thumbUrlResponse.key; // Store the key for later
     }
 
@@ -223,11 +225,11 @@ export function VideoUploadDialog({ open, onOpenChange, onUploadSuccess, userId 
     try {
       // --- 1. Get Pre-Signed URL ---
       const formDataUrl = new FormData();
-      formDataUrl.append("fileName", selectedFile.name);
+      formDataUrl.append("fileName", videoTitle);
       formDataUrl.append("contentType", selectedFile.type);
       // userId is taken from session in the server action
 
-     
+
       const urlResponse = await generatePresignedUploadUrl(formDataUrl);
 
       if (!urlResponse.success || !urlResponse.url || !urlResponse.key) {
@@ -260,7 +262,7 @@ export function VideoUploadDialog({ open, onOpenChange, onUploadSuccess, userId 
         xhr.send(selectedFile);
       });
 
-      console.log("✅ Direct S3 Upload successful");
+      // console.log("✅ Direct S3 Upload successful");
 
       const formDataMeta = new FormData();
       formDataMeta.append("s3Key", s3Key);
@@ -278,11 +280,11 @@ export function VideoUploadDialog({ open, onOpenChange, onUploadSuccess, userId 
 
       toast({
         title: "Upload Successful",
-        description: `${videoTitle} has been uploaded and is being processed`,
+        description: `${titleForToast} has been uploaded and is being processed`,
       })
 
       // Call success callback with new video
-      onUploadSuccess(metaResponse)
+      onUploadSuccess(metaResponse.video)
 
       // Reset form
       setSelectedFile(null)

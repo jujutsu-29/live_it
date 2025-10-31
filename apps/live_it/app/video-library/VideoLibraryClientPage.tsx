@@ -63,10 +63,12 @@ export default function VideoLibraryPage(s3Values: VideoLibraryClientProps) {
   const isAnyStreamLive = Object.keys(liveStreams).length > 0;
 
   const handleUploadSuccess = (newVideo: UploadedVideo) => {
+    // console.log("New video uploaded:", newVideo);
+    const titleForToast = newVideo.title || "Untitled Video";
     setVideos((prev) => [newVideo, ...prev])
     toast({
       title: "Video Added",
-      description: `${newVideo.title} has been added to your library and is being processed`,
+      description: `${titleForToast} has been added to your library and is being processed`,
     })
   }
 

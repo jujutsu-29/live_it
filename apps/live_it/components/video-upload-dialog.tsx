@@ -262,11 +262,9 @@ export function VideoUploadDialog({ open, onOpenChange, onUploadSuccess, userId 
 
       console.log("✅ Direct S3 Upload successful");
 
-      // --- 3. Confirm Upload and Save Metadata ---
       const formDataMeta = new FormData();
       formDataMeta.append("s3Key", s3Key);
-      formDataMeta.append("title", selectedFile.name); // Or get title from an input field
-      // userId is taken from session in the server action
+      formDataMeta.append("title", videoTitle);
 
       if (thumbnailS3Key) {
         formDataMeta.append("thumbnailS3Key", thumbnailS3Key);
@@ -299,61 +297,6 @@ export function VideoUploadDialog({ open, onOpenChange, onUploadSuccess, userId 
       setUploadProgress(0);
     }
   };
-  //   try {
-  //     // Simulate upload progress
-  //     const progressInterval = setInterval(() => {
-  //       setUploadProgress((prev) => {
-  //         if (prev >= 90) {
-  //           clearInterval(progressInterval)
-  //           return prev
-  //         }
-  //         return prev + Math.random() * 30
-  //       })
-  //     }, 500)
-
-  //     // Call upload API
-  //     const formData = new FormData()
-  //     formData.append("file", selectedFile)
-  //     formData.append("title", videoTitle)
-  //     // formData.append("userId", userId)
-
-  //     const response = await fetch("/api/upload-video", {
-  //       method: "POST",
-  //       body: formData,
-  //     })
-
-  //     clearInterval(progressInterval)
-  //     setUploadProgress(100)
-
-  //     if (!response.ok) {
-  //       throw new Error("Upload failed")
-  //     }
-
-  //     const data = await response.json()
-
-  //     toast({
-  //       title: "Upload Successful",
-  //       description: `${videoTitle} has been uploaded and is being processed`,
-  //     })
-
-  //     // Call success callback with new video
-  //     onUploadSuccess(data.video)
-
-  //     // Reset form
-  //     setSelectedFile(null)
-  //     setVideoTitle("")
-  //     setUploadProgress(0)
-  //     onOpenChange(false)
-  //   } catch (error) {
-  //     toast({
-  //       title: "Upload Failed",
-  //       description: "There was an error uploading your video. Please try again.",
-  //       variant: "destructive" as any,
-  //     })
-  //   } finally {
-  //     setIsUploading(false)
-  //   }
-  // }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
